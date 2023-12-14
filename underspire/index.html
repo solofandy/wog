@@ -1,0 +1,634 @@
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GOW - Underspire</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.3/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body,
+        div {
+            margin: 0;
+            padding: 0;
+            border: 0;
+        }
+
+        body {
+            background-color: #363636;
+        }
+
+        #underspire-input {
+            margin: auto;
+            margin-top: 0px;
+            font-size: 14px;
+            width: 819px;
+        }
+
+        #underspire-map {
+            margin: auto;
+            margin-top: 10px;
+            min-width: 800px;
+            min-height: 800px;
+        }
+
+        #underspire-info {
+            margin: auto;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #999;
+            width: 819px;
+            text-align: right;
+        }
+
+        #underspire-map tr,
+        #underspire-map td {
+            margin: 0;
+            padding: 0;
+            border: 0;
+            text-align: center;
+            color: #444;
+            font-size: 12px;
+            background-color: #011121;
+        }
+
+        .cell {
+            width: 40px;
+            height: 40px;
+            display: grid;
+            grid-template-columns: 33.33% 33.33% 33.33%;
+            grid-template-rows: 33.33% 33.33% 33.33%;
+            filter: brightness(0.4);
+        }
+
+        .cell-core {
+            border-radius: 2px;
+            background-color: #ddd;
+            font-size: 9px;
+            color: #222;
+            cursor: pointer;
+        }
+
+        .cell-path {
+            background-color: transparent;
+        }
+
+        .cell-path.up,
+        .cell-path.down {
+            margin: 0 4px 0 4px;
+        }
+
+        .cell-path.left,
+        .cell-path.right {
+            margin: 4px 0 4px 0;
+        }
+
+        .cell.up .cell-path.up,
+        .cell.down .cell-path.down,
+        .cell.left .cell-path.left,
+        .cell.right .cell-path.right {
+            background-color: #bbb;
+        }
+
+        .cell.none .cell-path,
+        .cell.none .cell-core {
+            background-color: transparent;
+        }
+
+        .cell.visited {
+            filter: none;
+            /* background-color:rgb(14 44 96); */
+        }
+
+        .cell.fuzzy {
+            filter: brightness(0.75);
+            /* background-color:rgb(14 44 96); */
+        }
+
+        .cell.fuzzy .cell-core {
+            background-color: #99bd00;
+        }
+
+        .cell.deleted .cell-core {
+            background-color: #ff26f4 !important;
+        }
+
+        .cell.entrance .cell-core {
+            background-color: #00d1d1 !important;
+            /* background-color: #becd35 !important; */
+        }
+
+        .cell.gate-up .cell-path.up,
+        .cell.gate-down .cell-path.down,
+        .cell.gate-left .cell-path.left,
+        .cell.gate-right .cell-path.right {
+            background-color: #00d1d1 !important;
+            /* background-color: #ff5e00 !important; */
+        }
+
+        .cell.gate .cell-core {
+            /* background-color: #00ffff !important; */
+            background-color: #00d1d1 !important;
+        }
+
+        .cell.boss .cell-core {
+            background-color: #ff5e00 !important;
+        }
+
+        .cell.shop .cell-core {
+            background-color: #becd35 !important;
+        }
+
+        .cell.treasure .cell-core {
+            background-color: #00ff0db6 !important;
+        }
+
+        #underspire-tool {
+            font-size: 9px;
+            width: 800px;
+            margin: auto;
+            text-align: right;
+        }
+    </style>
+</head>
+
+<body>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.3/js/bootstrap.bundle.min.js"></script>
+    <div id="underspire-input" class="row g-3">
+        <div class="col-11">
+          <input type="text" class="form-control form-control-sm" placeholder="THE DATA YOU FOUND">
+        </div>
+        <div class="col-1">
+          <button type="submit" class="btn btn-success btn-sm mb-3">go</button>
+        </div>
+    </div>
+
+    <table id="underspire-map"> </table>
+    <div id="underspire-info"></div>
+    <div id="underspire-tool">
+        <button id="button-clear">fuzzy clear</button> 
+    </div>
+
+    <script>
+        let fuzzyMode = "fuzzy"; // or "clear"
+        let information = "";
+        let fuzzies = {};
+        const showInformation = () => {
+            $("#underspire-info").text(`${information}, ${Object.keys(fuzzies).length} fuzzies.`);
+        }
+
+        const CELL_TYPE_ENTRANCE = 0x01;
+        const CELL_TYPE_TREASURE_2 = 0x02;
+        const CELL_TYPE_TREASURE_3 = 0x03;
+        const CELL_TYPE_TREASURE_4 = 0x04;
+        const CELL_TYPE_TREASURE_5 = 0x05;
+        const CELL_TYPE_DRAGON = 0x09;
+        const CELL_TYPE_FINAL = 0x0a;
+        const CELL_TYPE_SHOP = 0x0b;
+        const DIRS = [
+            { row: 1, col: 0, bit: 2, name: "down" }, // down
+            { row: -1, col: 0, bit: 0, name: "up"}, // up
+            { row: 0, col: 1, bit: 1, name: "right" },  // right
+            { row: 0, col: -1, bit: 3, name: "left" },  // left
+        ];
+
+        const getCellNum = (row, col) => {
+            return row * 100 + col;
+        }
+
+        const getCellRC = (num) => {
+            return {
+                row: (num / 100) | 0,
+                col: (num % 100) | 0
+            };
+        }
+
+        const getCellId = (num) => {
+            return `underspire-map-cell-${num}`;
+        }
+
+        const getCellDomId = (row, col) => {
+            return getCellId(getCellNum(row, col));
+        }
+
+        const getCellType = (value) => {
+            return (value & 0xF0) >> 4;
+        }
+
+        const is = (value, typa) => {
+            return getCellType(value) == typa
+        }
+
+        const isTreasure = (value) => {
+            const t = getCellType(value);
+            return t == CELL_TYPE_TREASURE_2 ||
+                t == CELL_TYPE_TREASURE_3 ||
+                t == CELL_TYPE_TREASURE_4 ||
+                t == CELL_TYPE_TREASURE_5 ||
+				(t > CELL_TYPE_TREASURE_5 && t <= 7);
+        }
+
+        const hasUp = (value) => {
+            return (value & 0b0001) == 0;
+        }
+
+        const hasRight = (value) => {
+            return (value & 0b0010) == 0;
+        }
+
+        const hasDown = (value) => {
+            return (value & 0b0100) == 0;
+        }
+
+        const hasLeft = (value) => {
+            return (value & 0b1000) == 0;
+        }
+
+        const hasPath = (value, bit) => {
+            return (value & (1 << bit)) == 0;
+        }
+
+        const build = (UnderspireData) => {
+            window.$s = UnderspireData;
+            let cells = 0;
+            const gates = {};
+            const bosses = {};
+            const treasures = {};
+            const roads = [];
+            const regions = {};
+            const entrance = {};
+            const deleted = [];
+
+            const isGate = (row, col) => {
+                return getCellNum(row, col) in gates;
+            }
+
+            const getGateDir = (row, col) => {
+                for (let i = 0; i < 6; i++) {
+                    const g = UnderspireData.Gates[i];
+                    if (g.Node == getCellNum(row, col)) {
+                        return g.Dir;
+                    }
+                }
+                return -1;
+            }
+
+            const isConnected = (r1, c1, r2, c2, bit) => {
+                if (r1 < 0 || r1 >= 20 ||
+                    c1 < 0 || c1 >= 20 ||
+                    r2 < 0 || r2 >= 20 ||
+                    c2 < 0 || c2 >= 20) {
+                    return false;
+                }
+                const tib = (bit + 2) % 4;
+                const v1 = UnderspireData.Map[r1][c1];
+                const v2 = UnderspireData.Map[r2][c2];
+                return hasPath(v1, bit) && hasPath(v2, tib);
+            }
+
+            const color = (srow, scol, X) => {
+                const colored = (row, col) => {
+                    return getCellNum(row, col) in regions;
+                }
+                const bulk = [{
+                    row: srow, 
+                    col: scol
+                }];
+                while (bulk.length > 0) {
+                    const { row, col } = bulk.shift();
+                    for (const dir of DIRS) {
+                        const r = row + dir.row;
+                        const c = col + dir.col;
+                        if (isGate(row, col) && row != srow && col != scol && dir.bit == getGateDir(row, col)) {
+                            continue;
+                        }
+                        if (isConnected(row, col, r, c, dir.bit) && !colored(r, c)) {
+                            regions[getCellNum(r, c)] = X;
+                            bulk.push({
+                                row: r,
+                                col: c
+                            });
+                        }
+                    }
+                }
+            }
+
+            const bfs = (we) => {
+                const bulk = [];
+                const visit = {};
+                for (const node of we) {
+                    node.state = "built";
+                    node.distance = we.length - 1;
+                    bulk.push(node);
+                    visit[getCellNum(node.row, node.col)] = node;
+                }
+
+                const isTarget = (row, col) => {
+                    const value = UnderspireData.Map[row][col];
+                    return isGate(row, col) || is(value, CELL_TYPE_DRAGON) || is(value, CELL_TYPE_FINAL);
+                }
+
+                while (bulk.length > 0) {
+                    const current = bulk.shift();
+                    const { row, col } = current;
+                    const value = UnderspireData.Map[row][col];
+                    if (isTarget(row, col) && current.state != "built") {
+                        // console.log('found:', current);
+                        const B = 1 + Object.keys(bosses).length;
+                        if (is(value, CELL_TYPE_DRAGON)) {
+                            bosses[getCellNum(row, col)] = B;
+                            $(`#${getCellDomId(row, col)} .cell-core`).text(`${B > 6 ? 6 : B}`);
+                        }
+                        if (is(value, CELL_TYPE_FINAL)) {
+                            bosses[getCellNum(row, col)] = B;
+                            $(`#${getCellDomId(row, col)} .cell-core`).text(`F`);
+                        }
+                        let node = current;
+                        while (node) {
+                            if (node.state == "inspecting") {
+                                node.state = "built";
+                                we.push(node);
+                                node = visit[getCellNum(node.parent.row, node.parent.col)];
+                            }
+                            else {
+                                return true;
+                            }
+                        }
+                        break;
+                    }
+                    else {
+                        for (const dir of DIRS) {
+                            const nrow = row + dir.row;
+                            const ncol = col + dir.col;
+                            if (isConnected(row, col, nrow, ncol, dir.bit) && !(getCellNum(nrow, ncol) in visit)) {
+                                const next = {
+                                    row: nrow,
+                                    col: ncol,
+                                    parent: { row, col },
+                                    distance: current.distance + 1,
+                                    state: "inspecting"
+                                }
+                                bulk.push(next);
+                                visit[getCellNum(nrow, ncol)] = next;
+                            }
+                        }
+                    }
+                }
+                return false;
+
+            }
+
+            const buildCell = (row, col, value) => {
+                const dir = [];
+                if ((value & 0xF) == 0xF) {
+                    dir.push("none")
+                }
+                if (hasUp(value)) {
+                    dir.push("up");
+                }
+                if (hasRight(value)) {
+                    dir.push("right");
+                }
+                if (hasDown(value)) {
+                    dir.push("down");
+                }
+                if (hasLeft(value)) {
+                    dir.push("left");
+                }
+                if (is(value, CELL_TYPE_ENTRANCE)) {
+                    dir.push("entrance");
+                }
+                return `
+                <td>
+                    <div id="${getCellDomId(row, col)}" class="cell ${dir.join(' ')}">
+                        <div></div>
+                        <div class="cell-path up"></div>
+                        <div></div>
+                        <div class="cell-path left"></div>
+                        <div class="cell-core">${is(value, CELL_TYPE_ENTRANCE) ? 'E' : ''}</div>
+                        <div class="cell-path right"></div>
+                        <div></div>
+                        <div class="cell-path down"></div>
+                        <div></div>
+                    </div>
+                </td>
+            `
+            };
+
+            $("#underspire-map").empty(); {
+                const tr = ['<td>&nbsp;</td>'];
+                for (let col = 0; col < 20; col++) {
+                    tr.push(`<td>${col + 1}</td>`);
+                }
+                tr.push('<td>&nbsp;</td>');
+                $("#underspire-map").append(`<tr>${tr}</tr>`);
+            }
+
+            for (let row = 0; row < 20; row++) {
+                const tr = [`<td>${row + 1}</td>`];
+                for (let col = 0; col < 20; col++) {
+                    const value = UnderspireData.Map[row][col];
+                    tr.push(buildCell(row, col, value));
+                }
+                tr.push(`<td>${row + 1}</td>`)
+                $("#underspire-map").append(`<tr>${tr}</tr>`);
+            }
+            {
+                const tr = ['<td>&nbsp;</td>'];
+                for (let col = 0; col < 20; col++) {
+                    tr.push(`<td>${col + 1}</td>`);
+                }
+                tr.push('<td>&nbsp;</td>');
+                $("#underspire-map").append(`<tr>${tr}</tr>`);
+            }
+
+            for (let row = 0; row < 20; row++) {
+                for (let col = 0; col < 20; col++) {
+                    const value = UnderspireData.Map[row][col];
+                    if (is(value, CELL_TYPE_SHOP)) {
+                        $(`#${getCellDomId(row, col)}`).addClass('shop');
+                        $(`#${getCellDomId(row, col)} .cell-core`).text('S');
+                    }
+                    else if (is(value, CELL_TYPE_DRAGON) || is(value, CELL_TYPE_FINAL)) {
+                        $(`#${getCellDomId(row, col)}`).addClass('boss');
+                        $(`#${getCellDomId(row, col)} .cell-core`).text('B');
+                    }
+                    else if (isTreasure(value)) {
+                        $(`#${getCellDomId(row, col)}`).addClass('treasure').addClass(`treasure-${getCellType(value)}`);
+                        $(`#${getCellDomId(row, col)} .cell-core`).text(`${getCellType(value)}`);
+                    }
+                    else if (is(value, CELL_TYPE_ENTRANCE)) {
+                        entrance.row = row;
+                        entrance.col = col;
+                    }
+                    else if (getCellType(value) == 0) {
+
+                    }
+                    else {
+                        console.log(`${row}:${col}: type=${getCellType(value)}, value=${value.toString(16)}`);
+                    }
+
+                    if (value != 0xF) {
+                        cells++;
+                    }
+                }
+            }
+
+            for (const key in UnderspireData.Gates) {
+                let d = "";
+                const G = parseInt(key) + 1;
+                const gate = UnderspireData.Gates[key];
+                gates[gate.Node] = G;
+                for (const dir of DIRS) {
+                    if (dir.bit == gate.Dir) {
+                        d = dir.name;
+                    }
+                }
+                if (d == "") {
+                    console.error(`${gate.Node} ${gate.Dir}`);
+                }
+                $(`#underspire-map-cell-${gate.Node}`).addClass(`gate-${d}`).addClass('gate');
+                $(`#underspire-map-cell-${gate.Node} .cell-core`).text(parseInt(key) + 1);
+            }
+            //console.log('Gates: ', JSON.stringify(gates, null, 2));
+
+            roads.push({ 
+                row: entrance.row, 
+                col: entrance.col, 
+                distance: 0, 
+                parent: null 
+            });
+            for (let i = 0; i < 6 + 7; i++) {
+                if (!bfs(roads)) {
+                    console.log("no way");
+                    break;
+                }
+            }
+            for (const node of roads) {
+                $(`#${getCellDomId(node.row, node.col)}`).addClass("visited");
+            }
+            console.log('Bosses: ', JSON.stringify(bosses, null, 2));
+            console.log('Treasures: ', JSON.stringify(UnderspireData.TreasureRoomInfo, null, 2));
+
+            color(entrance.row, entrance.col, 1);
+            for (const key in UnderspireData.Gates) {
+                const G = parseInt(key) + 1;
+                const gate = UnderspireData.Gates[key];
+                color((gate.Node / 100) | 0, (gate.Node % 100) | 0, G + 1);
+            }
+            const getRegionRooms = (X) => {
+                let count = 0;
+                for (const num in regions) {
+                    count += (regions[num] == X) ? 1 : 0;
+                }
+                return X == 1 ? (count - 2) : (count - 1);
+            }
+            // for (const num in regions) {
+            //     $(`#${getCellId(num)} .cell-core`).text(regions[num]);
+            // }
+            let s = "";
+            for (let i = 1; i < 6; i++) {
+                s += `${getRegionRooms(i)} `
+            }
+            s += `${getRegionRooms(6)}`
+
+            {
+                const edges = (value) => {
+                    let count = 0;
+                    for (const dir of DIRS) {
+                        count += hasPath(value, dir.bit) ? 1 : 0;
+                    }
+                    return count;
+                }
+
+                const isMainRoad = (row, col) => {
+                    for (const node of roads) {
+                        if (node.row == row && node.col == col) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+
+                for (let row = 0; row < 20; row++) {
+                    for (let col = 0; col < 20; col++) {
+                        const value = UnderspireData.Map[row][col];
+                        if (isMainRoad(row, col) || edges(value) != 1 || is(value, CELL_TYPE_SHOP)) {
+                            continue;
+                        }
+                        deleted.push(getCellNum(row, col));
+                    }
+                }
+                // for (const del of deleted) {
+                //     $(`#${getCellId(del)}`).addClass("deleted");
+                //     $(`#${getCellId(del)} .cell-core`).text('X');
+                // }
+            }
+
+            fuzzies = JSON.parse(localStorage.getItem("USFUZZY") || '{}');
+            for (let fuzzy in fuzzies)
+            {
+                $(`#${fuzzy}`).addClass("fuzzy");
+            }
+
+            information = `${roads.length - 1} steps, ${cells} rooms exsit, at most ${cells - 7 - deleted.length - 1} Torches need`;
+            showInformation();
+
+            $(`.cell-core`).click((e) => {
+                const $p = $(e.target).parent();
+                if (fuzzyMode == "fuzzy" && !$p.hasClass("visited") && !$p.hasClass("none"))
+                {
+                    const id = $p.attr('id');
+                    $p.toggleClass("fuzzy");
+                    if ($p.hasClass('fuzzy'))
+                    {
+                        fuzzies[id] = 1
+                    }
+                    else
+                    {
+                        delete fuzzies[id];
+                    }
+                    localStorage.setItem("USFUZZY", JSON.stringify(fuzzies));
+                    showInformation();
+                }
+            })
+        }
+
+        const saveMap = (str) => {
+            localStorage.setItem("USMAP", str);
+        }
+
+        const loadMap = () => {
+            const str = localStorage.getItem("USMAP");
+            if (!!str) {
+                build(JSON.parse(str));
+            }
+        }
+
+        $("#underspire-input button").click(() => {
+            try {
+                const content = $("#underspire-input input").val().replace(/^[^{]*{/, "{");
+                const response = JSON.parse(content);
+                if ('result' in response && 'Info' in response.result) {
+                    build(response.result.Info.UnderspireData);
+                    saveMap(JSON.stringify(response.result.Info.UnderspireData));
+                }
+            }
+            catch(e) {
+
+            }
+        })
+        
+        $("#button-clear").click(() => {
+            $(".cell.fuzzy").removeClass("fuzzy");
+            fuzzies = {};
+            localStorage.setItem("USFUZZY", JSON.stringify(fuzzies));
+            showInformation();
+        });
+
+        loadMap();
+    </script>
+
+
+
+</body>
