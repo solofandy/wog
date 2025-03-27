@@ -10,6 +10,7 @@
             margin: 0;
             padding: 0;
             font-size: 12px;
+            text-align: center;
             background-color: #151a1a;
         }
 
@@ -49,30 +50,28 @@
         #main-content {
             padding-top: 80px;
             padding-bottom: 50px;
-            margin: 0 auto;
+            margin: 10px auto;
             width: 1360px;
             background-color: #144f4f;
         }
 
         .spot-row {
             height: 222px;
-            text-align: center;
             padding-left: 25px;
         }
 
         .spot {
             display: inline-block;
             background-color: #f0f0ff;
-            width: 400px;
-            height: 184px;
+            width: 376px;
+            height: 180px;
             margin: 0 20px;
             padding: 0;
             border-radius: 2px;
         }
 
         .spot-restriction {
-            background-color: #28bf8c;
-            border-radius: 2px;
+            background-color: #399b7a;
             color: #fefefe;
             font-weight: bold;
             height: 30px;
@@ -84,17 +83,19 @@
             font-size: 12px;
             line-height: 22px;
             display: flex;
+            padding: 0 2px;
         }
 
         .spot-guy {
             width: 120px;
             height: 150px;
-            margin: 2px 6px;
+            margin: 2px;
         }
 
         .spot-guy-name {
             width: 120px;
             height: 24px;
+            border-radius: 2px;
             background-color: #89c7b2;
         }
 
@@ -103,14 +104,14 @@
             height: 24px;
             font-size: 11px;
             color: #555;
-            background-color: #fefefe;
+            background-color: #cfd7cf;
         }
 
         .spot-guy-troop {
             width: 120px;
             height: 24px;
             color: #222;
-            background-color: #fefefe;
+            background-color: #d7ddd7;
         }
     </style>
 
@@ -123,6 +124,7 @@
 -->
     <script src="./jquery-3.6.0.min.js"></script>
     <script src="./bootstrap.bundle.min.js"></script>
+    <script src="./notify.js"></script>
 
     <div id="header">
         <div id="header-content">
@@ -168,8 +170,18 @@
     <script>
         function get_hero_name(hero) {
             const names = {
-                "elementalist": "元素家",
-                "stormcaller": "风暴召唤者"
+                elementalist: "元素家",
+                stormcaller: "风暴召唤者",
+                spiritwalker: "灵力行者",
+                thief: '神偷',
+                hunter: '金乌',
+                monk: '和尚',
+                tidecaller: '唤浪',
+                assassin: '刺客',
+                geomancer: '风水',
+                necromancer: '死灵',
+                orbweaver: '编织者',
+                mechanist: '机械技师'
             }
             return hero in names ? names[hero] : hero;
         }
@@ -230,37 +242,39 @@
 
         function generate_guy(guy) {
             const hide_name = (name) => {
-                return !!name && name.length > 3 ? `${name [0]}${name[1]}${name[2]}...` : name;
+                return name;
+                // return !!name && name.length > 4 ? `${name.substr(0, 4)}...` : name;
             }
-            const hero = () => (!!guy.team && !!guy.team.hero) ? `/ ${get_hero_name(guy.team.hero)}` : '';
+            const hero = (!!guy.team && !!guy.team.hero) ? `/ ${get_hero_name(guy.team.hero)}` : '';
+            const banner = (!!guy.team && !!guy.team.banner) ? `${guy.team.banner},` : ``;
             const troop = (i) => {
                 if (!!guy.team && !!guy.team.troops && i < guy.team.troops.length) {
-                    return get_name(guy.team.troops[i])
+                    return guy.team.troops[i]
                 }
                 else {
                     return '';
                 }
             }
-
+            const team = `${banner}${troop(0)},${troop(1)},${troop(2)},${troop(3)}`;
             return `
-                <div class="spot-guy">
+                <div class="spot-guy" team="${team}">
                     <div class="spot-guy-name">
                         ${hide_name(guy.name) || '-'}
                     </div>
                     <div class="spot-guy-misc">
-                        ${guy.level || ''} ${hero()}
+                        ${guy.level || ''} ${hero}
                     </div>
                     <div class="spot-guy-troop">
-                        ${troop(0)}
+                        ${get_name(troop(0))}
                     </div>
                     <div class="spot-guy-troop">
-                        ${troop(1)}
+                        ${get_name(troop(1))}
                     </div>
                     <div class="spot-guy-troop">
-                        ${troop(2)}
+                        ${get_name(troop(2))}
                     </div>
                     <div class="spot-guy-troop">
-                        ${troop(3)}
+                        ${get_name(troop(3))}
                     </div>
                 </div>
             `
@@ -299,6 +313,14 @@
             $("#spot-row-4").append(generate_spot(guild.defenders[4][0]));
 
             $("#guild-name").text(guild.name);
+
+            $(`.spot-guy`).dblclick(async (e) => {
+                const team = '[' + $(e.currentTarget).attr('team') + ']';
+                if (team.length > 6) {
+                    await navigator.clipboard.writeText(team);
+                    $.notify("复制成功", "success");
+                }
+            });
         }
 
         function toggle() {
@@ -318,8 +340,6 @@
                 const raw = JSON.parse(content);
                 we = raw.result.GuildKeepData.MyKeepData;
                 vs = raw.result.GuildKeepData.OpponentKeepData;
-
-
                 localStorage.setItem(`KEEP_WE`, JSON.stringify(we));
                 localStorage.setItem(`KEEP_VS`, JSON.stringify(vs));
                 render(vs);
@@ -331,8 +351,11 @@
         })
 
         if (`KeepColour` in vs) {
+            current = 'VS';
             render(vs);
         }
+
+        $.notify("双击复制阵容", "info");
 
     </script>
 
