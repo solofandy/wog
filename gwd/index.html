@@ -166,6 +166,16 @@
     </script>
 
     <script>
+        function get_hero_name(hero) {
+            const names = {
+                "elementalist": "元素家",
+                "stormcaller": "风暴召唤者"
+            }
+            return hero in names ? names[hero] : hero;
+        }
+    </script>
+
+    <script>
 
         const WE = `We`;
         var current = '';
@@ -219,7 +229,10 @@
         }
 
         function generate_guy(guy) {
-            const hero = () => (!!guy.team && !!guy.team.hero) ? guy.team.hero : '';
+            const hide_name = (name) => {
+                return !!name && name.length > 3 ? `${name [0]}${name[1]}${name[2]}...` : name;
+            }
+            const hero = () => (!!guy.team && !!guy.team.hero) ? `/ ${get_hero_name(guy.team.hero)}` : '';
             const troop = (i) => {
                 if (!!guy.team && !!guy.team.troops && i < guy.team.troops.length) {
                     return get_name(guy.team.troops[i])
@@ -232,10 +245,10 @@
             return `
                 <div class="spot-guy">
                     <div class="spot-guy-name">
-                        ${guy.name || '-'}
+                        ${hide_name(guy.name) || '-'}
                     </div>
                     <div class="spot-guy-misc">
-                        ${guy.level || ''} / ${hero()}
+                        ${guy.level || ''} ${hero()}
                     </div>
                     <div class="spot-guy-troop">
                         ${troop(0)}
