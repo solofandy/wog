@@ -242,8 +242,8 @@
 
         function generate_guy(guy) {
             const hide_name = (name) => {
-                return name.substr(0, 1);
-                //return !!name && name.length >  ? `${name.substr(0, 4)}...` : name;
+                //return name.substr(0, 1);
+                return !!name && name.length > 1 ? `${name.substr(0, 1)}...` : name;
             }
             const hero = (!!guy.team && !!guy.team.hero) ? `/ ${get_hero_name(guy.team.hero)}` : '';
             const banner = (!!guy.team && !!guy.team.banner) ? `${guy.team.banner},` : ``;
