@@ -242,8 +242,12 @@
 
         function generate_guy(guy) {
             const hide_name = (name) => {
-                return name;
-                // return !!name && name.length > 4 ? `${name.substr(0, 4)}...` : name;
+                if (location.search.match(/fullname/i)) {
+                    return name;
+                }
+                else {
+                    return !!name && name.length > 2 ? `${name.substr(0, 2)}...` : name;
+                }
             }
             const hero = (!!guy.team && !!guy.team.hero) ? `/ ${get_hero_name(guy.team.hero)}` : '';
             const banner = (!!guy.team && !!guy.team.banner) ? `${guy.team.banner},` : ``;
