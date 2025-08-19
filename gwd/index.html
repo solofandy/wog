@@ -86,6 +86,36 @@
             margin: 40px auto;
             padding: 0;
             border-radius: 2px;
+            transition: all 0.2s linear;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .spot::before, .spot::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(to right, #fcff37, #ffa3c5);
+            left: 0;
+            transform: scaleX(0);
+            transition: transform 0.4s ease-out;
+        }
+
+        .spot::before {
+            top: -8px;
+            transform-origin: left;
+        }
+
+        .spot::after {
+            bottom: -4px;
+            transform-origin: right;
+            background: linear-gradient(to right, #af05da, #43ffef);
+        }
+        
+        .spot:hover::after,
+        .spot:hover::before {
+            transform: scaleX(1);
         }
 
         .spot-restriction {
