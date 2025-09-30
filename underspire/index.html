@@ -61,7 +61,7 @@
         }
 
         .cell-core {
-            background-color: #ddd;
+            background-color: #CCD2D2;
             font-size: 1w2px;
             color: #222;
             cursor: pointer;
@@ -74,19 +74,19 @@
 
         .cell-path.up,
         .cell-path.down {
-            margin: 0 5px;
+            margin: 0 5.5px;
         }
 
         .cell-path.left,
         .cell-path.right {
-            margin: 5px 0;
+            margin: 5.5px 0;
         }
 
         .cell.up .cell-path.up,
         .cell.down .cell-path.down,
         .cell.left .cell-path.left,
         .cell.right .cell-path.right {
-            background-color: #bbb;
+            background-color: #CCD2D2;
         }
 
         .cell.none .cell-path,
@@ -99,14 +99,9 @@
             /* background-color:rgb(14 44 96); */
         }
 
-        .cell.visited .cell-path {
-            filter: brightness(0.75);
-        }
-
-        .cell.fuzzy {
-            filter: brightness(0.6);
-            /* background-color:rgb(14 44 96); */
-        }
+        /* .cell.visited .cell-path {
+            filter: brightness(0.5);
+        } */
 
         .cell.treasure {
             filter: brightness(0.6);
@@ -523,9 +518,9 @@
                 }
             }
             allclear = roads.length - 1;
-            // for (const node of roads) {
-            //     $(`#${getCellDomId(node.row, node.col)}`).addClass("fuzzy");
-            // }
+            for (const node of roads) {
+                $(`#${getCellDomId(node.row, node.col)}`).removeClass("fuzzy");
+            }
 
             while (roads.length > 0) {
                 roads.pop();
