@@ -25,7 +25,7 @@
         }
 
         #underspire-map {
-            margin: auto;
+            margin-left: calc(50vw - 510px);
             margin-top: 10px;
             min-width: 800px;
             min-height: 800px;
@@ -52,20 +52,20 @@
         }
 
         .cell {
-            width: 40px;
-            height: 40px;
+            width: 51px;
+            height: 51px;
             display: grid;
             grid-template-columns: 33.33% 33.33% 33.33%;
             grid-template-rows: 33.33% 33.33% 33.33%;
-            filter: brightness(0.4);
+            filter: brightness(0.3);
         }
 
         .cell-core {
-            border-radius: 2px;
             background-color: #ddd;
-            font-size: 9px;
+            font-size: 1w2px;
             color: #222;
             cursor: pointer;
+            border-radius: 1px;
         }
 
         .cell-path {
@@ -74,12 +74,12 @@
 
         .cell-path.up,
         .cell-path.down {
-            margin: 0 4px 0 4px;
+            margin: 0 5px;
         }
 
         .cell-path.left,
         .cell-path.right {
-            margin: 4px 0 4px 0;
+            margin: 5px 0;
         }
 
         .cell.up .cell-path.up,
@@ -95,17 +95,21 @@
         }
 
         .cell.visited {
-            filter: none;
+            filter: brightness(0.9);
             /* background-color:rgb(14 44 96); */
+        }
+
+        .cell.visited .cell-path {
+            filter: brightness(0.75);
         }
 
         .cell.fuzzy {
-            filter: brightness(0.75);
+            filter: brightness(0.6);
             /* background-color:rgb(14 44 96); */
         }
 
-        .cell.fuzzy .cell-core {
-            background-color: #99bd00;
+        .cell.treasure {
+            filter: brightness(0.6);
         }
 
         .cell.deleted .cell-core {
@@ -139,7 +143,11 @@
         }
 
         .cell.treasure .cell-core {
-            background-color: #00ff0db6 !important;
+            background-color: #00ff0d88 !important;
+        }
+        
+        .cell.treasure .cell-path {
+            filter: brightness(0.5);
         }
 
         #underspire-tool {
@@ -147,6 +155,11 @@
             width: 800px;
             margin: auto;
             text-align: right;
+        }
+
+        #button-clear {
+            margin-top: 20px;
+            float: right;
         }
     </style>
 </head>
@@ -165,16 +178,16 @@
 
     <table id="underspire-map"> </table>
     <div id="underspire-info"></div>
-    <div id="underspire-tool">
-        <button id="button-clear">fuzzy clear</button> 
-    </div>
+    <!-- <div id="underspire-tool">
+        <button id="button-clear" class="btn btn-sm btn-primary">清除标记</button> 
+    </div> -->
 
     <script>
         let fuzzyMode = "fuzzy"; // or "clear"
         let information = "";
         let fuzzies = {};
         const showInformation = () => {
-            $("#underspire-info").text(`${information}, ${Object.keys(fuzzies).length} fuzzies.`);
+            $("#underspire-info").text(`${information}`);
         }
 
         const CELL_TYPE_ENTRANCE = 0x01;
@@ -253,11 +266,12 @@
             let cells = 0;
             const gates = {};
             const bosses = {};
-            const treasures = {};
+            const treasures = [];
             const roads = [];
             const regions = {};
             const entrance = {};
             const deleted = [];
+            var allclear = 0;
 
             const isGate = (row, col) => {
                 return getCellNum(row, col) in gates;
@@ -313,7 +327,7 @@
                 }
             }
 
-            const bfs = (we) => {
+            const bfs = (we, treasuring) => {
                 const bulk = [];
                 const visit = {};
                 for (const node of we) {
@@ -325,6 +339,9 @@
 
                 const isTarget = (row, col) => {
                     const value = UnderspireData.Map[row][col];
+                    if (treasuring && isTreasure(value)) {
+                        return true;
+                    }
                     return isGate(row, col) || is(value, CELL_TYPE_DRAGON) || is(value, CELL_TYPE_FINAL);
                 }
 
@@ -335,11 +352,11 @@
                     if (isTarget(row, col) && current.state != "built") {
                         // console.log('found:', current);
                         const B = 1 + Object.keys(bosses).length;
-                        if (is(value, CELL_TYPE_DRAGON)) {
+                        if (!treasuring && is(value, CELL_TYPE_DRAGON)) {
                             bosses[getCellNum(row, col)] = B;
                             $(`#${getCellDomId(row, col)} .cell-core`).text(`${B > 6 ? 6 : B}`);
                         }
-                        if (is(value, CELL_TYPE_FINAL)) {
+                        if (!treasuring && is(value, CELL_TYPE_FINAL)) {
                             bosses[getCellNum(row, col)] = B;
                             $(`#${getCellDomId(row, col)} .cell-core`).text(`F`);
                         }
@@ -454,8 +471,9 @@
                         $(`#${getCellDomId(row, col)} .cell-core`).text('B');
                     }
                     else if (isTreasure(value)) {
-                        $(`#${getCellDomId(row, col)}`).addClass('treasure').addClass(`treasure-${getCellType(value)}`);
-                        $(`#${getCellDomId(row, col)} .cell-core`).text(`${getCellType(value)}`);
+                        $(`#${getCellDomId(row, col)}`).addClass('treasure').addClass("fuzzy");
+                        $(`#${getCellDomId(row, col)} .cell-core`).text(` `);
+                        treasures.push({row, col});
                     }
                     else if (is(value, CELL_TYPE_ENTRANCE)) {
                         entrance.row = row;
@@ -498,17 +516,38 @@
                 distance: 0, 
                 parent: null 
             });
-            for (let i = 0; i < 6 + 7; i++) {
-                if (!bfs(roads)) {
+            for (let i = 0; i < 6 + 7 + 30; i++) {
+                if (!bfs(roads, true)) {
                     console.log("no way");
                     break;
                 }
             }
-            for (const node of roads) {
-                $(`#${getCellDomId(node.row, node.col)}`).addClass("visited");
+            allclear = roads.length - 1;
+            // for (const node of roads) {
+            //     $(`#${getCellDomId(node.row, node.col)}`).addClass("fuzzy");
+            // }
+
+            while (roads.length > 0) {
+                roads.pop();
             }
-            console.log('Bosses: ', JSON.stringify(bosses, null, 2));
-            console.log('Treasures: ', JSON.stringify(UnderspireData.TreasureRoomInfo, null, 2));
+            roads.push({ 
+                row: entrance.row, 
+                col: entrance.col, 
+                distance: 0, 
+                parent: null 
+            });
+            for (let i = 0; i < 6 + 7; i++) {
+                if (!bfs(roads, false)) {
+                    console.log("no way");
+                    break;
+                }
+            }
+
+            for (const node of roads) {
+                $(`#${getCellDomId(node.row, node.col)}`).removeClass("fuzzy").addClass("visited");
+            }
+            // console.log('Bosses: ', JSON.stringify(bosses, null, 2));
+            // console.log('Treasures: ', JSON.stringify(UnderspireData.TreasureRoomInfo, null, 2));
 
             color(entrance.row, entrance.col, 1);
             for (const key in UnderspireData.Gates) {
@@ -571,7 +610,7 @@
                 $(`#${fuzzy}`).addClass("fuzzy");
             }
 
-            information = `${roads.length - 1} steps, ${cells} rooms exsit, at most ${cells - 7 - deleted.length - 1} Torches need`;
+            information = `6龙、${treasures.length}箱子全清：${allclear}； 迷宫房间总数：${cells}`;
             showInformation();
 
             $(`.cell-core`).click((e) => {
@@ -579,7 +618,7 @@
                 if (fuzzyMode == "fuzzy" && !$p.hasClass("visited") && !$p.hasClass("none"))
                 {
                     const id = $p.attr('id');
-                    $p.toggleClass("fuzzy");
+                    //$p.toggleClass("fuzzy");
                     if ($p.hasClass('fuzzy'))
                     {
                         fuzzies[id] = 1
