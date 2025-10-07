@@ -99,12 +99,13 @@
             /* background-color:rgb(14 44 96); */
         }
 
-        /* .cell.visited .cell-path {
-            filter: brightness(0.5);
-        } */
+        .cell.fuzzy {
+            filter: brightness(0.6);
+            /* background-color:rgb(14 44 96); */
+        }
 
         .cell.treasure {
-            filter: brightness(0.6);
+            filter: brightness(0.58);
         }
 
         .cell.deleted .cell-core {
@@ -138,12 +139,9 @@
         }
 
         .cell.treasure .cell-core {
-            background-color: #00ff0d88 !important;
+            background-color: #00ff0dAA !important;
         }
         
-        .cell.treasure .cell-path {
-            filter: brightness(0.5);
-        }
 
         #underspire-tool {
             font-size: 9px;
@@ -173,9 +171,9 @@
 
     <table id="underspire-map"> </table>
     <div id="underspire-info"></div>
-    <!-- <div id="underspire-tool">
+    <div id="underspire-tool">
         <button id="button-clear" class="btn btn-sm btn-primary">清除标记</button> 
-    </div> -->
+    </div>
 
     <script>
         let fuzzyMode = "fuzzy"; // or "clear"
@@ -605,7 +603,7 @@
                 $(`#${fuzzy}`).addClass("fuzzy");
             }
 
-            information = `6龙、${treasures.length}箱子全清：${allclear}； 迷宫房间总数：${cells}`;
+            information = `7龙、${treasures.length}箱子全清：${allclear}； 迷宫房间总数：${cells}`;
             showInformation();
 
             $(`.cell-core`).click((e) => {
@@ -613,7 +611,7 @@
                 if (fuzzyMode == "fuzzy" && !$p.hasClass("visited") && !$p.hasClass("none"))
                 {
                     const id = $p.attr('id');
-                    //$p.toggleClass("fuzzy");
+                    $p.toggleClass("fuzzy");
                     if ($p.hasClass('fuzzy'))
                     {
                         fuzzies[id] = 1
