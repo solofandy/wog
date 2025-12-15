@@ -142,6 +142,13 @@
             background-color: #00ff0dAA !important;
         }
         
+        .cell.treasure-90 .cell-core {
+            background-color: #ff009d86 !important;
+        }
+
+        .cell.unknown-90 .cell-core {
+            background-color: #6200ff86 !important;
+        }
 
         #underspire-tool {
             font-size: 9px;
@@ -191,6 +198,8 @@
         const CELL_TYPE_DRAGON = 0x09;
         const CELL_TYPE_FINAL = 0x0a;
         const CELL_TYPE_SHOP = 0x0b;
+        const CELL_TYPE_90_UNKNOWN = 12;
+        const CELL_TYPE_90_TREASURE = 13;
         const DIRS = [
             { row: 1, col: 0, bit: 2, name: "down" }, // down
             { row: -1, col: 0, bit: 0, name: "up"}, // up
@@ -475,6 +484,12 @@
                     else if (getCellType(value) == 0) {
 
                     }
+                    else if (getCellType(value) == CELL_TYPE_90_TREASURE) {
+                        $(`#${getCellDomId(row, col)}`).addClass('treasure-90');
+                    }
+                    else if (getCellType(value) == CELL_TYPE_90_UNKNOWN) {
+                        $(`#${getCellDomId(row, col)}`).addClass('unknown-90');
+                    }
                     else {
                         console.log(`${row}:${col}: type=${getCellType(value)}, value=${value.toString(16)}`);
                     }
@@ -502,6 +517,9 @@
                 $(`#underspire-map-cell-${gate.Node} .cell-core`).text(parseInt(key) + 1);
             }
             //console.log('Gates: ', JSON.stringify(gates, null, 2));
+
+            console.log(UnderspireData.ExtraRooms);
+
 
             roads.push({ 
                 row: entrance.row, 
