@@ -63,7 +63,7 @@
         .cell-core {
             background-color: #CCD2D2;
             font-size: 1w2px;
-            color: #222;
+            color: #DEFDEF;
             cursor: pointer;
             border-radius: 1px;
         }
@@ -143,11 +143,11 @@
         }
         
         .cell.treasure-90 .cell-core {
-            background-color: #ff009d86 !important;
+            background-color: #8fec436c !important;
         }
 
-        .cell.unknown-90 .cell-core {
-            background-color: #6200ff86 !important;
+        .cell.trap-90 .cell-core {
+            background-color: #ff009da1 !important;
         }
 
         #underspire-tool {
@@ -488,7 +488,7 @@
                         $(`#${getCellDomId(row, col)}`).addClass('treasure-90');
                     }
                     else if (getCellType(value) == CELL_TYPE_90_UNKNOWN) {
-                        $(`#${getCellDomId(row, col)}`).addClass('unknown-90');
+                        $(`#${getCellDomId(row, col)}`).addClass('trap-90');
                     }
                     else {
                         console.log(`${row}:${col}: type=${getCellType(value)}, value=${value.toString(16)}`);
