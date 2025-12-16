@@ -21,11 +21,11 @@
             margin: auto;
             margin-top: 0px;
             font-size: 14px;
-            width: 819px;
+            width: 1040px;
         }
 
         #underspire-map {
-            margin-left: calc(50vw - 510px);
+            margin-left: calc(50vw - 520px);
             margin-top: 10px;
             min-width: 800px;
             min-height: 800px;
@@ -33,10 +33,11 @@
 
         #underspire-info {
             margin: auto;
-            margin-top: 10px;
+            margin-top: 20px;
+            margin-bottom: 20px;
             font-size: 14px;
             color: #999;
-            width: 819px;
+            width: 1040px;
             text-align: right;
         }
 
@@ -104,9 +105,6 @@
             /* background-color:rgb(14 44 96); */
         }
 
-        .cell.treasure {
-            filter: brightness(0.58);
-        }
 
         .cell.deleted .cell-core {
             background-color: #ff26f4 !important;
@@ -143,7 +141,7 @@
         }
         
         .cell.treasure-90 .cell-core {
-            background-color: #8ff03f8e;
+            background-color: #cb74ee8e;
         }
 
         .cell.trap-90 .cell-core {
@@ -152,15 +150,11 @@
 
         #underspire-tool {
             font-size: 9px;
-            width: 800px;
+            width: 1040px;
             margin: auto;
             text-align: right;
         }
 
-        #button-clear {
-            margin-top: 20px;
-            float: right;
-        }
     </style>
 </head>
 
@@ -172,13 +166,14 @@
           <input type="text" class="form-control form-control-sm" placeholder="THE DATA YOU FOUND">
         </div>
         <div class="col-1">
-          <button type="submit" class="btn btn-success btn-sm mb-3">go</button>
+          <button type="submit" class="btn btn-success btn-sm mb-3" style="width: 80px;">go</button>
         </div>
     </div>
 
     <table id="underspire-map"> </table>
     <div id="underspire-info"></div>
     <div id="underspire-tool">
+        <button id="button-complete" class="btn btn-sm btn-success" style="margin: 0 5px ;">清除完成节点</button> 
         <button id="button-clear" class="btn btn-sm btn-primary">清除标记</button> 
     </div>
 
@@ -609,6 +604,7 @@
                         deleted.push(getCellNum(row, col));
                     }
                 }
+
                 // for (const del of deleted) {
                 //     $(`#${getCellId(del)}`).addClass("deleted");
                 //     $(`#${getCellId(del)} .cell-core`).text('X');
@@ -674,6 +670,20 @@
             fuzzies = {};
             localStorage.setItem("USFUZZY", JSON.stringify(fuzzies));
             showInformation();
+        });
+
+        $("#button-complete").click(() => {
+            for (const complete of window.$s.Completed) {
+                var r = (complete / 100) | 0;
+                var c = (complete % 100) | 0;
+                console.log(r + 1, c + 1);
+                if (r > 80) {
+                    r -= 80;
+                }
+                console.log(r, c);
+                $(`#${getCellDomId(r, c)}`).removeClass("visited");
+                
+            }
         });
 
         loadMap();
