@@ -197,7 +197,7 @@
         const CELL_TYPE_DRAGON = 0x09;
         const CELL_TYPE_FINAL = 0x0a;
         const CELL_TYPE_SHOP = 0x0b;
-        const CELL_TYPE_90_UNKNOWN = 12;
+        const CELL_TYPE_90_TRAP = 12;
         const CELL_TYPE_90_TREASURE = 13;
         const DIRS = [
             { row: 1, col: 0, bit: 2, name: "down" }, // down
@@ -273,6 +273,26 @@
             const entrance = {};
             const deleted = [];
             var allclear = 0;
+
+            const treasure90 = {};
+            for (const t90 of UnderspireData.ExtraRooms) {
+                treasure90[t90.RoomId] = t90;
+            }
+
+            const isTreasure90 = (row, col, value) => {
+                const rid = row * 100 + col;
+                if (!(rid in treasure90)) {
+                    return false;
+                }
+                const t = treasure90[rid].TypeId;
+                if (t == 3 || t == 5) {
+                    return true;
+                }
+                else {
+                    console.log(`${row + 1} : ${col + 1}, TYPE=${t}`);
+                    return false;
+                }
+            }
 
             const isGate = (row, col) => {
                 return getCellNum(row, col) in gates;
@@ -483,14 +503,14 @@
                     else if (getCellType(value) == 0) {
 
                     }
-                    else if (getCellType(value) == CELL_TYPE_90_TREASURE) {
+                    else if (isTreasure90(row, col, value)) {
                         $(`#${getCellDomId(row, col)}`).addClass('treasure-90');
                     }
-                    else if (getCellType(value) == CELL_TYPE_90_UNKNOWN) {
+                    else if (getCellType(value) == CELL_TYPE_90_TRAP) {
                         $(`#${getCellDomId(row, col)}`).addClass('trap-90');
                     }
                     else {
-                        console.log(`${row}:${col}: type=${getCellType(value)}, value=${value.toString(16)}`);
+                        // console.log(`${row}:${col}: type=${getCellType(value)}, value=${value.toString(16)}`);
                     }
 
                     if (value != 0xF) {
@@ -517,7 +537,7 @@
             }
             //console.log('Gates: ', JSON.stringify(gates, null, 2));
 
-            console.log(UnderspireData.ExtraRooms);
+            // console.log(UnderspireData.ExtraRooms);
 
 
             roads.push({ 
