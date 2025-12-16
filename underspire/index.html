@@ -100,6 +100,10 @@
             /* background-color:rgb(14 44 96); */
         }
 
+        .cell.completed {
+            filter: brightness(0.3) !important;
+        }
+
         .cell.fuzzy {
             filter: brightness(0.6);
             /* background-color:rgb(14 44 96); */
@@ -676,13 +680,10 @@
             for (const complete of window.$s.Completed) {
                 var r = (complete / 100) | 0;
                 var c = (complete % 100) | 0;
-                console.log(r + 1, c + 1);
                 if (r > 80) {
                     r -= 80;
                 }
-                console.log(r, c);
-                $(`#${getCellDomId(r, c)}`).removeClass("visited");
-                
+                $(`#${getCellDomId(r, c)}`).toggleClass("completed");
             }
         });
 
