@@ -701,8 +701,8 @@
             for (const complete of window.$s.Completed) {
                 var r = (complete / 100) | 0;
                 var c = (complete % 100) | 0;
-                if (r > 80) {
-                    r -= 80;
+                while (r > 20) {
+                    r -= 20;
                 }
                 $(`#${getCellDomId(r, c)}`).toggleClass("completed");
             }
