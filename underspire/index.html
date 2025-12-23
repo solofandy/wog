@@ -58,11 +58,10 @@
             display: grid;
             grid-template-columns: 33.33% 33.33% 33.33%;
             grid-template-rows: 33.33% 33.33% 33.33%;
-            filter: brightness(0.3);
         }
 
         .cell-core {
-            background-color: #CCD2D2;
+            background-color: #666b6b;
             font-size: 1w2px;
             color: #DEFDEF;
             cursor: pointer;
@@ -87,7 +86,7 @@
         .cell.down .cell-path.down,
         .cell.left .cell-path.left,
         .cell.right .cell-path.right {
-            background-color: #CCD2D2;
+            background-color: #666b6b;
         }
 
         .cell.none .cell-path,
@@ -96,18 +95,11 @@
         }
 
         .cell.visited {
-            filter: brightness(0.9);
-            /* background-color:rgb(14 44 96); */
+            background-color: #0a2a5a;
         }
 
         .cell.completed {
-            filter: brightness(0.6) !important;
-            background-color: #86b7fe;
-        }
-
-        .cell.fuzzy {
-            filter: brightness(0.6);
-            /* background-color:rgb(14 44 96); */
+            background-color: #38404d!important;
         }
 
 
@@ -291,6 +283,20 @@
                 }
                 else {
                     console.log(`${row + 1} : ${col + 1}, TYPE=${t}`);
+                    return false;
+                }
+            }
+
+            const isPotral = (row, col, value) => {
+                const rid = row * 100 + col;
+                if (!(rid in treasure90)) {
+                    return false;
+                }
+                const t = treasure90[rid].TypeId;
+                if (t == 1) {
+                    return true;
+                }
+                else {
                     return false;
                 }
             }
@@ -506,6 +512,9 @@
                     }
                     else if (isTreasure90(row, col, value)) {
                         $(`#${getCellDomId(row, col)}`).addClass('treasure-90');
+                    }
+                    else if (isPotral(row, col, value)) {
+                        $(`#${getCellDomId(row, col)} .cell-core`).text(`<·>`);
                     }
                     else if (getCellType(value) == CELL_TYPE_90_TRAP) {
                         $(`#${getCellDomId(row, col)}`).addClass('trap-90');
