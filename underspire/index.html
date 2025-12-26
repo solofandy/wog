@@ -29,6 +29,7 @@
             margin-top: 0px;
             font-size: 14px;
             width: 1040px;
+            padding-left: 10px;
         }
 
 
@@ -108,10 +109,19 @@
             background-color: #bbb;
         }
 
+        .label-completed,
         .cell.completed {
             background-color: #38404a!important;
         }
+        
+        .label-tip {
+            padding-left: 6px;
+            padding-right: 6px;
+            cursor: pointer;
+            color: #fff;
+        }
 
+        .label-gate,
         .cell.entrance .cell-core,
         .cell.gate .cell-core,
         .cell.gate-up .cell-path.up,
@@ -121,6 +131,7 @@
             background-color: #25f3fa !important;
         }
 
+        .label-boss,
         .cell.boss .cell-core {
             background-color: #ff5e00 !important;
         }
@@ -129,14 +140,17 @@
             /* background-color: #555 !important; */
         }
 
+        .label-treasure,
         .cell.treasure .cell-core {
             background-color: #00f80c !important;
         }
         
+        .label-treasure-90,
         .cell.treasure-90 .cell-core {
             background-color: #d3d700;
         }
 
+        .label-trap-90,
         .cell.trap-90 .cell-core {
             background-color: #d12b63;
         }
@@ -163,41 +177,43 @@
         </div>
     </div>
 
-    <!-- <div class="input-container">
+	<div class="input-container">
         <div class="form-check form-check-inline">
-            <input class="form-check-input" type="checkbox" id="inlineCheckbox1" value="option1">
-            <label class="form-check-label" for="inlineCheckbox1">门</label>
+            <input class="form-check-input" type="checkbox" id="icb-gate" checked disabled value="option1">
+            <label class="form-check-label label-tip label-gate" for="inlineCheckbox1">牢门</label>
           </div>
           <div class="form-check form-check-inline">
-            <input class="form-check-input" type="checkbox" id="inlineCheckbox2" value="option2">
-            <label class="form-check-label" for="inlineCheckbox2">龙</label>
+            <input class="form-check-input" type="checkbox" id="icb-boss" checked disabled value="option2">
+            <label class="form-check-label label-tip label-boss">牢龙</label>
           </div> 
           <div class="form-check form-check-inline">
-            <input class="form-check-input" type="checkbox" id="inlineCheckbox2" value="option2">
-            <label class="form-check-label" for="inlineCheckbox2">商人</label>
+            <input class="form-check-input" type="checkbox" id="icb-shop" checked disabled value="option2">
+            <label class="form-check-label label-tip">商人</label>
           </div> 
           <div class="form-check form-check-inline">
-            <input class="form-check-input" type="checkbox" id="inlineCheckbox2" value="option2">
-            <label class="form-check-label" for="inlineCheckbox2">宝箱</label>
+            <input class="form-check-input switch-tip" type="checkbox" id="icb-treasure" value="option2">
+            <label class="form-check-label label-tip label-treasure" for="icb-treasure">宝箱</label>
           </div>
           <div class="form-check form-check-inline">
-            <input class="form-check-input" type="checkbox" id="inlineCheckbox2" value="option2">
-            <label class="form-check-label" for="inlineCheckbox2">宝藏（9.0）</label>
+            <input class="form-check-input switch-tip" type="checkbox" id="icb-treasure-90" value="option2">
+            <label class="form-check-label label-tip label-treasure-90" for="icb-treasure-90">宝藏</label>
           </div>
           <div class="form-check form-check-inline">
-            <input class="form-check-input" type="checkbox" id="inlineCheckbox2" value="option2">
-            <label class="form-check-label" for="inlineCheckbox2">陷阱（9.0）</label>
+            <input class="form-check-input switch-tip" type="checkbox" id="icb-trap-90" value="option2">
+            <label class="form-check-label label-tip label-trap-90" for="icb-trap-90">陷阱</label>
           </div>
           <div class="form-check form-check-inline">
-            <input class="form-check-input" type="checkbox" id="inlineCheckbox2" value="option2">
-            <label class="form-check-label" for="inlineCheckbox2">传送（9.0）</label>
-          </div>
-    </div> -->
 
-    <table id="underspire-map"> </table>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input switch-tip" type="checkbox" id="icb-completed" value="option2">
+            <label class="form-check-label label-tip label-completed" for="icb-completed">已完成</label>
+          </div>
+    </div>
+
+    <table id="underspire-map" class="shadow "> </table>
     <div id="underspire-info"></div>
     <div id="underspire-tool">
-        <button id="button-complete" class="btn btn-sm btn-success" style="margin: 0 5px ;">清除完成节点</button> 
         <button id="button-clear" class="btn btn-sm btn-primary">清除标记</button> 
     </div>
 
@@ -205,6 +221,7 @@
         let fuzzyMode = "fuzzy"; // or "clear"
         let information = "";
         let fuzzies = {};
+        let switches = {};
         const showInformation = () => {
             $("#underspire-info").text(`${information}`);
         }
@@ -280,6 +297,32 @@
 
         const hasPath = (value, bit) => {
             return (value & (1 << bit)) == 0;
+        }
+
+        const hasSwitch = (name) => {
+            return (name in switches) && switches[name] == true
+        }
+
+        const loadSwitch = () => {
+            const str = localStorage.getItem("USSWITCH");
+            if (!!str) {
+                switches = JSON.parse(str);
+                $("#icb-trap-90").attr("checked", hasSwitch("trap90"))
+                $("#icb-treasure").attr("checked", hasSwitch("treasure"))
+                $("#icb-treasure-90").attr("checked", hasSwitch("treasure90"))
+                
+                $("#icb-completed").attr("checked", hasSwitch("completed"))
+            }
+        }
+
+        const saveSwitch = () => {
+            switches = {trap90: $("#icb-trap-90").is(":checked"),
+                treasure: $("#icb-treasure").is(":checked"),
+                treasure90: $("#icb-treasure-90").is(":checked"),
+
+                completed: $("#icb-completed").is(":checked")
+            }
+            localStorage.setItem("USSWITCH", JSON.stringify(switches))
         }
 
         const build = (UnderspireData) => {
@@ -525,7 +568,7 @@
                         $(`#${getCellDomId(row, col)}`).addClass('boss');
                         $(`#${getCellDomId(row, col)} .cell-core`).text('B');
                     }
-                    else if (isTreasure(value)) {
+                    else if (isTreasure(value) && hasSwitch("treasure")) {
                         $(`#${getCellDomId(row, col)}`).addClass('treasure').addClass("fuzzy");
                         $(`#${getCellDomId(row, col)} .cell-core`).text(` `);
                         treasures.push({row, col});
@@ -537,13 +580,13 @@
                     else if (getCellType(value) == 0) {
 
                     }
-                    else if (isTreasure90(row, col, value)) {
+                    else if (isTreasure90(row, col, value) && hasSwitch("treasure90")) {
                         $(`#${getCellDomId(row, col)}`).addClass('treasure-90');
                     }
                     else if (isPotral(row, col, value)) {
                         $(`#${getCellDomId(row, col)} .cell-core`).text(`<>`);
                     }
-                    else if (getCellType(value) == CELL_TYPE_90_TRAP) {
+                    else if (getCellType(value) == CELL_TYPE_90_TRAP && hasSwitch("trap90")) {
                         $(`#${getCellDomId(row, col)}`).addClass('trap-90');
                     }
                     else {
@@ -672,6 +715,16 @@
                 // }
             }
 
+            if (hasSwitch("completed")) {
+                for (const complete of UnderspireData.Completed) {
+                    var r = (complete / 100) | 0;
+                    var c = (complete % 100) | 0;
+                    while (r > 20) {
+                        r -= 20;
+                    }
+                    $(`#${getCellDomId(r, c)}`).toggleClass("completed");
+                }
+            }
             fuzzies = JSON.parse(localStorage.getItem("USFUZZY") || '{}');
             for (let fuzzy in fuzzies)
             {
@@ -701,17 +754,6 @@
             })
         }
 
-        const saveMap = (str) => {
-            localStorage.setItem("USMAP", str);
-        }
-
-        const loadMap = () => {
-            const str = localStorage.getItem("USMAP");
-            if (!!str) {
-                build(JSON.parse(str));
-            }
-        }
-
         $("#underspire-input button").click(() => {
             try {
                 const content = $("#underspire-input input").val().replace(/^[^{]*{/, "{");
@@ -733,17 +775,23 @@
             showInformation();
         });
 
-        $("#button-complete").click(() => {
-            for (const complete of window.$s.Completed) {
-                var r = (complete / 100) | 0;
-                var c = (complete % 100) | 0;
-                while (r > 20) {
-                    r -= 20;
-                }
-                $(`#${getCellDomId(r, c)}`).toggleClass("completed");
+        const saveMap = (str) => {
+            localStorage.setItem("USMAP", str);
+        }
+
+        const loadMap = () => {
+            const str = localStorage.getItem("USMAP");
+            if (!!str) {
+                build(JSON.parse(str));
             }
+        }
+        
+        $(`.switch-tip`).change(() => {
+            saveSwitch() 
+            loadMap()
         });
 
+        loadSwitch();
         loadMap();
     </script>
 
