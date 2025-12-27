@@ -604,12 +604,16 @@
                 }
             }
 
-
+            const detected = { }
             let main$ = 0
             let guardian$ = 0
             let treasure$ = 0
             let trap$ = 0
-            const detected = { }
+            let completen = 0
+            let mainn = 0
+            let guardiann = 0
+            let treasuren = 0
+            let trapn = 0
 
             if (hasSwitch(`completed`)) {
                 for (const room in completed) {
@@ -623,6 +627,39 @@
             const isUnseen = (row, col) => {
                 return !(getCellNum(row, col) in detected)
             }
+
+            completen = Object.keys(detected).length
+            
+            bosses.forEach(boss => {
+                let { row, col } = boss
+                if (isUnseen(boss.row, boss.col)) {
+                    mainn ++
+                }
+            })
+
+            guardians.forEach(guardian => {
+                let { row, col } = guardian
+                if (isUnseen(row, col)) {
+                    guardiann ++
+                }
+            })
+
+            if (hasSwitch("treasures")) {
+                for (const num in treasures) {
+                    const treasure = treasures[num]
+                    let { row, col } = treasure
+                    if (isUnseen(row, col)) {
+                        treasuren ++
+                    }
+                }
+            }
+
+            traps.forEach(trap => {
+                let { row, col } = trap
+                if (isUnseen(row, col)) {
+                    trapn ++
+                }
+            })
 
             parents[getCellNum(entrance.row, entrance.col)] = { row: -1, col: -1 }
             
@@ -704,14 +741,13 @@
             // window.$pnt = parents
 
             $(`#underspire-info`).html(`
-                <div class="line"> 牢龙全清还需约：${main$}</div>
-                <div class="line"> 守卫全清还需约：${guardian$}</div>
-                <div class="line"> 宝藏全清还需约：${treasure$}</div>
-                <div class="line"> 陷阱全清还需约：${trap$}</div>
+                <div class="line"> 已经完成节点：${completen}</div>
+                <div class="line"> 全清 ${mainn} 牢龙还需约：${main$}</div>
+                <div class="line"> 全清 ${guardiann} 守卫还需约：${guardian$}</div>
+                <div class="line"> 全清 ${treasuren} 宝藏还需约：${treasure$}</div>
+                <div class="line"> 全清 ${trapn} 陷阱还需约：${trap$}</div>
                 <div class="line">     共计约：${main$ + guardian$ + treasure$ + trap$}</div>
             `)
-            
-            //information = `7龙、箱子全清：${allclear}；迷宫房间总数：${cells}； 已完成：${UnderspireData.Completed.length}`;
             
         }
 
