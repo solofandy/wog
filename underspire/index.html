@@ -45,9 +45,14 @@
             margin-top: 20px;
             margin-bottom: 20px;
             font-size: 14px;
-            color: #999;
+            color: #5a5a5a;
             width: 1040px;
             text-align: right;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        #underspire-info .line {
+            padding-top: 3px;
         }
 
         #underspire-map tr,
@@ -98,15 +103,20 @@
             background-color: #777879;
         }
 
+        .cell.main {
+            background-color: #b0cdd0;
+        }
+
+        .cell.up .cell-path.main.up,
+        .cell.down .cell-path.main.down,
+        .cell.left .cell-path.main.left,
+        .cell.right .cell-path.main.right {
+            background-color: #25f3fa;
+        }
+
         .cell.none .cell-path,
         .cell.none .cell-core {
             background-color: transparent;
-        }
-
-        .cell.targets {
-            /* background-color: #60b0d0; */
-            /* background-color: #00d0d0; */
-            background-color: #bbb;
         }
 
         .label-completed,
@@ -140,13 +150,13 @@
             /* background-color: #555 !important; */
         }
 
-        .label-treasure,
-        .cell.treasure .cell-core {
+        .label-guardian,
+        .cell.guardian .cell-core {
             background-color: #00f80c !important;
         }
         
-        .label-treasure-90,
-        .cell.treasure-90 .cell-core {
+        .label-guardian-90,
+        .cell.guardian-90 .cell-core {
             background-color: #d3d700;
         }
 
@@ -191,12 +201,12 @@
             <label class="form-check-label label-tip">商人</label>
           </div> 
           <div class="form-check form-check-inline">
-            <input class="form-check-input switch-tip" type="checkbox" id="icb-treasure" value="option2">
-            <label class="form-check-label label-tip label-treasure" for="icb-treasure">宝箱</label>
+            <input class="form-check-input switch-tip" type="checkbox" id="icb-guardian" value="option2">
+            <label class="form-check-label label-tip label-guardian" for="icb-guardian">守卫</label>
           </div>
           <div class="form-check form-check-inline">
-            <input class="form-check-input switch-tip" type="checkbox" id="icb-treasure-90" value="option2">
-            <label class="form-check-label label-tip label-treasure-90" for="icb-treasure-90">宝藏</label>
+            <input class="form-check-input switch-tip" type="checkbox" id="icb-guardian-90" value="option2">
+            <label class="form-check-label label-tip label-guardian-90" for="icb-guardian-90">宝藏</label>
           </div>
           <div class="form-check form-check-inline">
             <input class="form-check-input switch-tip" type="checkbox" id="icb-trap-90" value="option2">
@@ -214,7 +224,7 @@
     <table id="underspire-map" class="shadow "> </table>
     <div id="underspire-info"></div>
     <div id="underspire-tool">
-        <button id="button-clear" class="btn btn-sm btn-primary">清除标记</button> 
+        <!-- <button id="button-clear" class="btn btn-sm btn-primary">清除标记</button>  -->
     </div>
 
     <script>
@@ -222,25 +232,22 @@
         let information = "";
         let fuzzies = {};
         let switches = {};
-        const showInformation = () => {
-            $("#underspire-info").text(`${information}`);
-        }
 
         const CELL_TYPE_ENTRANCE = 0x01;
-        const CELL_TYPE_TREASURE_2 = 0x02;
-        const CELL_TYPE_TREASURE_3 = 0x03;
-        const CELL_TYPE_TREASURE_4 = 0x04;
-        const CELL_TYPE_TREASURE_5 = 0x05;
+        const CELL_TYPE_GUARDIAN_2 = 0x02;
+        const CELL_TYPE_GUARDIAN_3 = 0x03;
+        const CELL_TYPE_GUARDIAN_4 = 0x04;
+        const CELL_TYPE_GUARDIAN_5 = 0x05;
         const CELL_TYPE_DRAGON = 0x09;
         const CELL_TYPE_FINAL = 0x0a;
         const CELL_TYPE_SHOP = 0x0b;
         const CELL_TYPE_90_TRAP = 12;
-        const CELL_TYPE_90_TREASURE = 13;
+        const CELL_TYPE_90_GUARDIAN = 13;
         const DIRS = [
-            { row: 1, col: 0, bit: 2, name: "down" }, // down
-            { row: -1, col: 0, bit: 0, name: "up"}, // up
-            { row: 0, col: 1, bit: 1, name: "right" },  // right
-            { row: 0, col: -1, bit: 3, name: "left" },  // left
+            { o: 1, row: 1, col: 0, bit: 2, name: "down" }, // down
+            { o: 0, row: -1, col: 0, bit: 0, name: "up"}, // up
+            { o: 3, row: 0, col: 1, bit: 1, name: "right" },  // right
+            { o: 2, row: 0, col: -1, bit: 3, name: "left" },  // left
         ];
 
         const getCellNum = (row, col) => {
@@ -270,13 +277,13 @@
             return getCellType(value) == typa
         }
 
-        const isTreasure = (value) => {
+        const isGuardian = (value) => {
             const t = getCellType(value);
-            return t == CELL_TYPE_TREASURE_2 ||
-                t == CELL_TYPE_TREASURE_3 ||
-                t == CELL_TYPE_TREASURE_4 ||
-                t == CELL_TYPE_TREASURE_5 ||
-				(t > CELL_TYPE_TREASURE_5 && t <= 7);
+            return t == CELL_TYPE_GUARDIAN_2 ||
+                t == CELL_TYPE_GUARDIAN_3 ||
+                t == CELL_TYPE_GUARDIAN_4 ||
+                t == CELL_TYPE_GUARDIAN_5 ||
+				(t > CELL_TYPE_GUARDIAN_5 && t <= 7);
         }
 
         const hasUp = (value) => {
@@ -299,6 +306,10 @@
             return (value & (1 << bit)) == 0;
         }
 
+        const opposite = (dir) => {
+            return DIRS[dir.o]
+        }
+
         const hasSwitch = (name) => {
             return (name in switches) && switches[name] == true
         }
@@ -307,18 +318,19 @@
             const str = localStorage.getItem("USSWITCH");
             if (!!str) {
                 switches = JSON.parse(str);
-                $("#icb-trap-90").attr("checked", hasSwitch("trap90"))
-                $("#icb-treasure").attr("checked", hasSwitch("treasure"))
-                $("#icb-treasure-90").attr("checked", hasSwitch("treasure90"))
+                $("#icb-trap-90").attr("checked", hasSwitch("trap"))
+                $("#icb-guardian").attr("checked", hasSwitch("guardian"))
+                $("#icb-guardian-90").attr("checked", hasSwitch("treasures"))
                 
                 $("#icb-completed").attr("checked", hasSwitch("completed"))
             }
         }
 
         const saveSwitch = () => {
-            switches = {trap90: $("#icb-trap-90").is(":checked"),
-                treasure: $("#icb-treasure").is(":checked"),
-                treasure90: $("#icb-treasure-90").is(":checked"),
+            switches = {
+                trap: $("#icb-trap-90").is(":checked"),
+                guardian: $("#icb-guardian").is(":checked"),
+                treasures: $("#icb-guardian-90").is(":checked"),
 
                 completed: $("#icb-completed").is(":checked")
             }
@@ -326,43 +338,55 @@
         }
 
         const build = (UnderspireData) => {
-            window.$s = UnderspireData;
-            let cells = 0;
-            const gates = {};
-            const bosses = {};
-            const treasures = [];
-            const roads = [];
-            const regions = {};
-            const entrance = {};
-            const deleted = [];
+            window.$s = UnderspireData
+            let cells = 0
+            let entrance = null
+            const roads = []
+            const gates = []
+            const bosses = []
+            const guardians = []
+            const treasures = {}
+            const traps = []
+
+            const regions = {}
+            const parents = {}
+            const completed = {}
+            
+            const deleted = []
             var allclear = 0;
 
-            const treasure90 = {};
-            for (const t90 of UnderspireData.ExtraRooms) {
-                treasure90[t90.RoomId] = t90;
+            
+            for (const treasure of UnderspireData.ExtraRooms) {
+                treasure.row = (treasure.RoomId / 100 % 20) | 0
+                treasure.col = (treasure.RoomId % 20) | 0
+                treasures[treasure.RoomId] = treasure;
             }
 
-            const isTreasure90 = (row, col, value) => {
-                const rid = row * 100 + col;
-                if (!(rid in treasure90)) {
+            const isTreasure = (row, col, value = 0) => {
+                const num = row * 100 + col;
+                if (!(num in treasures)) {
                     return false;
                 }
-                const t = treasure90[rid].TypeId;
+                const t = treasures[num].TypeId;
                 if (t == 3 || t == 5) {
                     return true;
                 }
                 else {
-                    console.log(`${row + 1} : ${col + 1}, TYPE=${t}`);
+                    console.log(`(${row + 1}, ${col + 1}): TYPE=${t}`);
                     return false;
                 }
             }
 
+            const isTrap =  (row, col, value) => {
+                return getCellType(value) == CELL_TYPE_90_TRAP
+            }
+
             const isPotral = (row, col, value) => {
                 const rid = row * 100 + col;
-                if (!(rid in treasure90)) {
+                if (!(rid in treasures)) {
                     return false;
                 }
-                const t = treasure90[rid].TypeId;
+                const t = treasures[rid].TypeId;
                 if (t == 1) {
                     return true;
                 }
@@ -371,8 +395,13 @@
                 }
             }
 
+            const isEntrance = (row, col) => {
+                return row == entrance.row && col == entrance.col
+            }
+
             const isGate = (row, col) => {
-                return getCellNum(row, col) in gates;
+                const found = gates.find((gate) => gate.row == row && gate.col == col)
+                return !!found;
             }
 
             const getGateDir = (row, col) => {
@@ -398,100 +427,11 @@
                 return hasPath(v1, bit) && hasPath(v2, tib);
             }
 
-            const color = (srow, scol, X) => {
-                const colored = (row, col) => {
-                    return getCellNum(row, col) in regions;
-                }
-                const bulk = [{
-                    row: srow, 
-                    col: scol
-                }];
-                while (bulk.length > 0) {
-                    const { row, col } = bulk.shift();
-                    for (const dir of DIRS) {
-                        const r = row + dir.row;
-                        const c = col + dir.col;
-                        if (isGate(row, col) && row != srow && col != scol && dir.bit == getGateDir(row, col)) {
-                            continue;
-                        }
-                        if (isConnected(row, col, r, c, dir.bit) && !colored(r, c)) {
-                            regions[getCellNum(r, c)] = X;
-                            bulk.push({
-                                row: r,
-                                col: c
-                            });
-                        }
-                    }
-                }
+            const getRegion = (row, col) => {
+                return regions[getCellNum(row, col)]
             }
 
-            const bfs = (we, treasuring) => {
-                const bulk = [];
-                const visit = {};
-                for (const node of we) {
-                    node.state = "built";
-                    node.distance = we.length - 1;
-                    bulk.push(node);
-                    visit[getCellNum(node.row, node.col)] = node;
-                }
-
-                const isTarget = (row, col) => {
-                    const value = UnderspireData.Map[row][col];
-                    if (treasuring && isTreasure(value)) {
-                        return true;
-                    }
-                    return isGate(row, col) || is(value, CELL_TYPE_DRAGON) || is(value, CELL_TYPE_FINAL);
-                }
-
-                while (bulk.length > 0) {
-                    const current = bulk.shift();
-                    const { row, col } = current;
-                    const value = UnderspireData.Map[row][col];
-                    if (isTarget(row, col) && current.state != "built") {
-                        // console.log('found:', current);
-                        const B = 1 + Object.keys(bosses).length;
-                        if (!treasuring && is(value, CELL_TYPE_DRAGON)) {
-                            bosses[getCellNum(row, col)] = B;
-                            $(`#${getCellDomId(row, col)} .cell-core`).text(`${B > 6 ? 6 : B}`);
-                        }
-                        if (!treasuring && is(value, CELL_TYPE_FINAL)) {
-                            bosses[getCellNum(row, col)] = B;
-                            $(`#${getCellDomId(row, col)} .cell-core`).text(`F`);
-                        }
-                        let node = current;
-                        while (node) {
-                            if (node.state == "inspecting") {
-                                node.state = "built";
-                                we.push(node);
-                                node = visit[getCellNum(node.parent.row, node.parent.col)];
-                            }
-                            else {
-                                return true;
-                            }
-                        }
-                        break;
-                    }
-                    else {
-                        for (const dir of DIRS) {
-                            const nrow = row + dir.row;
-                            const ncol = col + dir.col;
-                            if (isConnected(row, col, nrow, ncol, dir.bit) && !(getCellNum(nrow, ncol) in visit)) {
-                                const next = {
-                                    row: nrow,
-                                    col: ncol,
-                                    parent: { row, col },
-                                    distance: current.distance + 1,
-                                    state: "inspecting"
-                                }
-                                bulk.push(next);
-                                visit[getCellNum(nrow, ncol)] = next;
-                            }
-                        }
-                    }
-                }
-                return false;
-
-            }
+            const isCompleted = (row, col) => getCellNum(row, col) in completed
 
             const buildCell = (row, col, value) => {
                 const dir = [];
@@ -548,7 +488,8 @@
                 tr.push(`<td>${row + 1}</td>`)
                 $("#underspire-map").append(`<tr>${tr}</tr>`);
             }
-            {
+            
+            if (1) {
                 const tr = ['<td>&nbsp;</td>'];
                 for (let col = 0; col < 20; col++) {
                     tr.push(`<td>${col + 1}</td>`);
@@ -565,28 +506,29 @@
                         $(`#${getCellDomId(row, col)} .cell-core`).text('S');
                     }
                     else if (is(value, CELL_TYPE_DRAGON) || is(value, CELL_TYPE_FINAL)) {
+                        bosses.push({ row, col });
                         $(`#${getCellDomId(row, col)}`).addClass('boss');
                         $(`#${getCellDomId(row, col)} .cell-core`).text('B');
                     }
-                    else if (isTreasure(value) && hasSwitch("treasure")) {
-                        $(`#${getCellDomId(row, col)}`).addClass('treasure').addClass("fuzzy");
+                    else if (isGuardian(value) && hasSwitch("guardian")) {
+                        $(`#${getCellDomId(row, col)}`).addClass('guardian').addClass("fuzzy");
                         $(`#${getCellDomId(row, col)} .cell-core`).text(` `);
-                        treasures.push({row, col});
+                        guardians.push({row, col});
                     }
                     else if (is(value, CELL_TYPE_ENTRANCE)) {
-                        entrance.row = row;
-                        entrance.col = col;
+                        entrance = { row, col, parent: null };
                     }
                     else if (getCellType(value) == 0) {
 
                     }
-                    else if (isTreasure90(row, col, value) && hasSwitch("treasure90")) {
-                        $(`#${getCellDomId(row, col)}`).addClass('treasure-90');
+                    else if (isTreasure(row, col, value) && hasSwitch("treasures")) {
+                        $(`#${getCellDomId(row, col)}`).addClass('guardian-90');
                     }
                     else if (isPotral(row, col, value)) {
                         $(`#${getCellDomId(row, col)} .cell-core`).text(`<>`);
                     }
-                    else if (getCellType(value) == CELL_TYPE_90_TRAP && hasSwitch("trap90")) {
+                    else if (isTrap(row, col, value) && hasSwitch("trap")) {
+                        traps.push({ row, col })
                         $(`#${getCellDomId(row, col)}`).addClass('trap-90');
                     }
                     else {
@@ -601,9 +543,11 @@
 
             for (const key in UnderspireData.Gates) {
                 let d = "";
-                const G = parseInt(key) + 1;
+                const num = parseInt(key) + 1;
                 const gate = UnderspireData.Gates[key];
-                gates[gate.Node] = G;
+                const row = gate.Node / 100 | 0;
+                const col = gate.Node % 100;
+
                 for (const dir of DIRS) {
                     if (dir.bit == gate.Dir) {
                         d = dir.name;
@@ -612,146 +556,159 @@
                 if (d == "") {
                     console.error(`${gate.Node} ${gate.Dir}`);
                 }
+                
+                gates.push({ row, col, num, dir: d });
                 $(`#underspire-map-cell-${gate.Node}`).addClass(`gate-${d}`).addClass('gate');
-                $(`#underspire-map-cell-${gate.Node} .cell-core`).text(parseInt(key) + 1);
-            }
-            //console.log('Gates: ', JSON.stringify(gates, null, 2));
-
-            // console.log(UnderspireData.ExtraRooms);
-
-
-            roads.push({ 
-                row: entrance.row, 
-                col: entrance.col, 
-                distance: 0, 
-                parent: null 
-            });
-            for (let i = 0; i < 6 + 7 + 30; i++) {
-                if (!bfs(roads, true)) {
-                    console.log("no way");
-                    break;
-                }
-            }
-            allclear = roads.length - 1;
-            for (const node of roads) {
-                $(`#${getCellDomId(node.row, node.col)}`).removeClass("fuzzy");
+                $(`#underspire-map-cell-${gate.Node} .cell-core`).text(num);
             }
 
-            while (roads.length > 0) {
-                roads.pop();
+            for (const complete of UnderspireData.Completed) {
+                const row = ((complete / 100) % 20) | 0
+                const col = (complete % 20) | 0
+                completed[getCellNum(row, col)] = { row, col }
             }
-            roads.push({ 
-                row: entrance.row, 
-                col: entrance.col, 
-                distance: 0, 
-                parent: null 
-            });
-            for (let i = 0; i < 6 + 7; i++) {
-                if (!bfs(roads, false)) {
-                    console.log("no way");
-                    break;
-                }
-            }
-
-            for (const node of roads) {
-                $(`#${getCellDomId(node.row, node.col)}`).removeClass("fuzzy").addClass("targets");
-            }
-            // console.log('Bosses: ', JSON.stringify(bosses, null, 2));
-            // console.log('Treasures: ', JSON.stringify(UnderspireData.TreasureRoomInfo, null, 2));
-
-            color(entrance.row, entrance.col, 1);
-            for (const key in UnderspireData.Gates) {
-                const G = parseInt(key) + 1;
-                const gate = UnderspireData.Gates[key];
-                color((gate.Node / 100) | 0, (gate.Node % 100) | 0, G + 1);
-            }
-            const getRegionRooms = (X) => {
-                let count = 0;
-                for (const num in regions) {
-                    count += (regions[num] == X) ? 1 : 0;
-                }
-                return X == 1 ? (count - 2) : (count - 1);
-            }
-            // for (const num in regions) {
-            //     $(`#${getCellId(num)} .cell-core`).text(regions[num]);
-            // }
-            let s = "";
-            for (let i = 1; i < 6; i++) {
-                s += `${getRegionRooms(i)} `
-            }
-            s += `${getRegionRooms(6)}`
-
-            {
-                const edges = (value) => {
-                    let count = 0;
-                    for (const dir of DIRS) {
-                        count += hasPath(value, dir.bit) ? 1 : 0;
-                    }
-                    return count;
-                }
-
-                const isMainRoad = (row, col) => {
-                    for (const node of roads) {
-                        if (node.row == row && node.col == col) {
-                            return true;
-                        }
-                    }
-                    return false;
-                }
-
-                for (let row = 0; row < 20; row++) {
-                    for (let col = 0; col < 20; col++) {
-                        const value = UnderspireData.Map[row][col];
-                        if (isMainRoad(row, col) || edges(value) != 1 || is(value, CELL_TYPE_SHOP)) {
-                            continue;
-                        }
-                        deleted.push(getCellNum(row, col));
-                    }
-                }
-
-                // for (const del of deleted) {
-                //     $(`#${getCellId(del)}`).addClass("deleted");
-                //     $(`#${getCellId(del)} .cell-core`).text('X');
-                // }
-            }
-
+            
             if (hasSwitch("completed")) {
-                for (const complete of UnderspireData.Completed) {
-                    var r = (complete / 100) | 0;
-                    var c = (complete % 100) | 0;
-                    while (r > 20) {
-                        r -= 20;
-                    }
-                    $(`#${getCellDomId(r, c)}`).toggleClass("completed");
+                for (const num in completed) {
+                    const complete = completed[num]
+                    const { row, col } = complete
+                    $(`#${getCellDomId(row, col)}`).addClass("completed");
                 }
             }
-            fuzzies = JSON.parse(localStorage.getItem("USFUZZY") || '{}');
-            for (let fuzzy in fuzzies)
-            {
-                $(`#${fuzzy}`).addClass("fuzzy");
+            else {
+                $(`#${getCellDomId(entrance.row, entrance.col)}`).addClass("completed");
+            }
+                    
+            // console.log(`entrance`, entrance);
+            // console.log(`gates`, gates);
+            // console.log(`bosses`, bosses);
+            // console.log(`completed`, completed);
+
+            const dive = (row, col, distance, region) => {
+                regions[getCellNum(row, col)] = region
+                if (isGate(row, col)) {
+                    region++
+                }
+                for (const dir of DIRS) {
+                    const rew = row + dir.row
+                    const cel = col + dir.col
+                    const nem = getCellNum(rew, cel)
+                    if (isConnected(row, col, rew, cel, dir.bit) && !(nem in parents)) {
+                        parents[nem] = { row, col, dir }
+                        dive(rew, cel, distance + 1, region)
+                    }
+                }
             }
 
-            information = `7龙、${treasures.length}箱子全清：${allclear}；迷宫房间总数：${cells}； 已完成：${UnderspireData.Completed.length}`;
-            showInformation();
 
-            $(`.cell-core`).click((e) => {
-                const $p = $(e.target).parent();
-                if (fuzzyMode == "fuzzy" && !$p.hasClass("visited") && !$p.hasClass("none"))
-                {
-                    const id = $p.attr('id');
-                    $p.toggleClass("fuzzy");
-                    if ($p.hasClass('fuzzy'))
-                    {
-                        fuzzies[id] = 1
+            let main$ = 0
+            let guardian$ = 0
+            let treasure$ = 0
+            let trap$ = 0
+            const detected = { }
+
+            if (hasSwitch(`completed`)) {
+                for (const room in completed) {
+                    detected[room] = true
+                }
+            }
+            else {
+                detected[getCellNum(entrance.row, entrance.col)] = true
+            }
+
+            const isUnseen = (row, col) => {
+                return !(getCellNum(row, col) in detected)
+            }
+
+            parents[getCellNum(entrance.row, entrance.col)] = { row: -1, col: -1 }
+            
+            dive(entrance.row, entrance.col, 0, 1)
+
+            bosses.forEach(boss => {
+                let node = boss
+                const region = getRegion(node.row, node.col)
+                $(`#${getCellDomId(node.row, node.col)} .cell-core`).text(`${region == 7 ? 'F' : region}`)
+
+                while (isUnseen(node.row, node.col) && node.row >= 0) {
+                    const num = getCellNum(node.row, node.col)
+                    const pant = parents[num]
+                    const pum = getCellNum(pant.row, pant.col)
+                    $(`#${getCellDomId(node.row, node.col)}`).addClass(`main`);
+                    if (pant.row >= 0) {
+                        $(`#${getCellDomId(pant.row, pant.col)} .cell-path.${pant.dir.name}`).addClass(`main`)
+                        $(`#${getCellDomId(node.row, node.col)} .cell-path.${opposite(pant.dir).name}`).addClass(`main`)
                     }
-                    else
-                    {
-                        delete fuzzies[id];
-                    }
-                    localStorage.setItem("USFUZZY", JSON.stringify(fuzzies));
-                    showInformation();
+                    node = pant
                 }
             })
+
+            bosses.forEach(boss => {
+                let { row, col } = boss
+                while (isUnseen(row, col) && row >= 0) {
+                    main$ ++
+                    const num = getCellNum(row, col)
+                    const pnt = parents[num]
+                    detected[num] = true
+                    row = pnt.row
+                    col = pnt.col
+                }
+            })
+
+            guardians.forEach(guardian => {
+                let { row, col } = guardian
+                while (isUnseen(row, col) && row >= 0) {
+                    guardian$ ++
+                    const num = getCellNum(row, col)
+                    const pnt = parents[num]
+                    detected[num] = true
+                    row = pnt.row
+                    col = pnt.col
+                }
+            })
+
+            if (hasSwitch("treasures")) {
+                for (const num in treasures) {
+                    const treasure = treasures[num]
+                    let { row, col } = treasure
+                    while (isUnseen(row, col) && row >= 0) {
+                        treasure$ ++
+                        const num = getCellNum(row, col)
+                        const pnt = parents[num]
+                        detected[num] = true
+                        row = pnt.row
+                        col = pnt.col
+                    }
+                }
+            }
+
+            traps.forEach(trap => {
+                let { row, col } = trap
+                while (isUnseen(row, col) && row >= 0) {
+                    trap$ ++
+                    const num = getCellNum(row, col)
+                    const pnt = parents[num]
+                    detected[num] = true
+                    row = pnt.row
+                    col = pnt.col
+                }
+            })
+
+            // console.log(`main$ ${main$}`)
+            // console.log(`guardian$ ${guardian$}`)
+            // console.log(`treasure$ ${treasure$}`)
+            // console.log(`trap$ ${trap$}`)
+            // window.$pnt = parents
+
+            $(`#underspire-info`).html(`
+                <div class="line"> 牢龙全清还需约：${main$}</div>
+                <div class="line"> 守卫全清还需约：${guardian$}</div>
+                <div class="line"> 宝藏全清还需约：${treasure$}</div>
+                <div class="line"> 陷阱全清还需约：${trap$}</div>
+                <div class="line">     共计约：${main$ + guardian$ + treasure$ + trap$}</div>
+            `)
+            
+            //information = `7龙、箱子全清：${allclear}；迷宫房间总数：${cells}； 已完成：${UnderspireData.Completed.length}`;
+            
         }
 
         $("#underspire-input button").click(() => {
