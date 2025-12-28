@@ -405,7 +405,7 @@
 
             const isGate = (row, col) => {
                 const found = gates.find((gate) => gate.row == row && gate.col == col)
-                return !!found;
+                return found;
             }
 
             const getGateDir = (row, col) => {
@@ -584,22 +584,20 @@
             }
                     
             // console.log(`entrance`, entrance);
-            // console.log(`gates`, gates);
+            //console.log(`gates`, gates);
             // console.log(`bosses`, bosses);
             // console.log(`completed`, completed);
 
             const dive = (row, col, distance, region) => {
                 regions[getCellNum(row, col)] = region
-                if (isGate(row, col)) {
-                    region++
-                }
+                const gate = isGate(row, col)
                 for (const dir of DIRS) {
                     const rew = row + dir.row
                     const cel = col + dir.col
                     const nem = getCellNum(rew, cel)
                     if (isConnected(row, col, rew, cel, dir.bit) && !(nem in parents)) {
                         parents[nem] = { row, col, dir }
-                        dive(rew, cel, distance + 1, region)
+                        dive(rew, cel, distance + 1, gate && (gate.dir == dir.name) ? region + 1 : region)
                     }
                 }
             }
