@@ -24,6 +24,29 @@
             width: 1040px;
         }
 
+        #tool-panel {
+            width: 200px;
+            height: 600px;
+            position: fixed;
+            top: 0;
+            right: 0;
+            z-index: 30;
+            padding-right: 5px;
+            padding-top: 10px;
+        }
+
+        .tool-line {
+            float: right;
+            padding-right: 5px;
+        }
+        
+        .dark-switch label {
+            background-color: #333;
+            padding-left: 10px;
+            padding-right: 10px;
+            color: #ccc;
+        }
+
         .input-container {
             margin: auto;
             margin-top: 0px;
@@ -31,7 +54,6 @@
             width: 1040px;
             padding-left: 10px;
         }
-
 
         #underspire-map {
             margin-left: calc(50vw - 520px);
@@ -64,6 +86,28 @@
             color: #777676;
             font-size: 12px;
             background-color: #eaebec;
+        }
+
+        body.dark-mode {
+            background-color: #333;
+        }
+
+        .dark-mode #underspire-map tr,
+        .dark-mode #underspire-map td {
+            background-color: #444;
+        }
+
+        .dark-mode .cell.main {
+            background-color: #3e5457;
+        }
+
+        .dark-mode .label-completed,
+        .dark-mode .cell.completed {
+            background-color: #222222;
+        }
+
+        .dark-mode #underspire-info {
+            color: #aaa;
         }
 
         .cell {
@@ -186,7 +230,7 @@
     </style>
 </head>
 
-<body>
+<body class="light-mode">
     <script src="./jquery-3.6.0.min.js"></script>
     <script src="./bootstrap.bundle.min.js"></script>
     <div id="underspire-input" class="row g-3">
@@ -195,6 +239,15 @@
         </div>
         <div class="col-1">
           <button type="submit" class="btn btn-success btn-sm mb-3" style="width: 80px;">go</button>
+        </div>
+    </div>
+
+    <div id="tool-panel">
+        <div class="tool-line">
+            <div class="form-check dark-switch">
+                <input class="form-check-input switch-tip" type="checkbox" id="icb-dark-switch" value="option2">
+                <label class="form-check-label" for="icb-dark-switch">深色主题</label>
+            </div>
         </div>
     </div>
 
@@ -332,8 +385,8 @@
                 $("#icb-trap-90").attr("checked", hasSwitch("trap"))
                 $("#icb-guardian").attr("checked", hasSwitch("guardian"))
                 $("#icb-guardian-90").attr("checked", hasSwitch("treasures"))
-                
                 $("#icb-completed").attr("checked", hasSwitch("completed"))
+                $("#icb-dark-switch").attr("checked", hasSwitch("darkmode"))
             }
         }
 
@@ -342,8 +395,8 @@
                 trap: $("#icb-trap-90").is(":checked"),
                 guardian: $("#icb-guardian").is(":checked"),
                 treasures: $("#icb-guardian-90").is(":checked"),
-
-                completed: $("#icb-completed").is(":checked")
+                completed: $("#icb-completed").is(":checked"),
+                darkmode: $("#icb-dark-switch").is(":checked")
             }
             localStorage.setItem("USSWITCH", JSON.stringify(switches))
         }
@@ -777,6 +830,20 @@
             showInformation();
         });
 
+        const applyDarkMode = () => {
+            if ($("#icb-dark-switch").is(":checked")) {
+                $("body").addClass("dark-mode")
+            }
+            else {
+                $("body").removeClass("dark-mode")
+            }
+        }
+
+        $(`#icb-dark-switch`).change(() => {
+            saveSwitch()
+            applyDarkMode()
+        })
+
         const saveMap = (str) => {
             localStorage.setItem("USMAP", str);
         }
@@ -793,8 +860,9 @@
             loadMap()
         });
 
-        loadSwitch();
-        loadMap();
+        loadSwitch()
+        applyDarkMode()
+        loadMap()
     </script>
 
 
