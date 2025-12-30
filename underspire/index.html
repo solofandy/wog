@@ -15,6 +15,7 @@
 
         body {
             background-color: #c7c8c9;
+            min-width: 1600px;
         }
 
         #underspire-input {
@@ -59,8 +60,14 @@
         #underspire-map {
             margin-left: calc(50vw - 520px);
             margin-top: 10px;
-            min-width: 800px;
-            min-height: 800px;
+            min-width: 1040px;
+            min-height: 1040px;
+        }
+
+        @media (max-width: 768px) {
+            #underspire-map {
+                margin-left: 0
+            }
         }
 
         #underspire-info {
@@ -882,7 +889,7 @@
             const at = new Date()
             at.setTime(player.mapat)
             $(`#underspire-info`).html(`
-                <div class="line"> 地图同于时间：${at}</div>
+                <div class="line"> 同步时间：${at}</div>
                 <div class="line"> 已经完成节点：${completen}</div>
                 <div class="line"> 全清 ${mainn} 牢龙还需约：${main$}</div>
                 <div class="line"> 全清 ${guardiann} 守卫还需约：${guardian$}</div>
