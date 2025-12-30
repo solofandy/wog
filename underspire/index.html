@@ -89,16 +89,53 @@
         }
 
         body.dark-mode {
-            background-color: #333;
+            background-color: #444;
         }
 
         .dark-mode #underspire-map tr,
         .dark-mode #underspire-map td {
-            background-color: #444;
+            background-color: #333;
         }
 
         .dark-mode .cell.main {
-            background-color: #3e5457;
+            background-color: #3a3a3a;
+        }
+
+        .dark-mode .label-gate,
+        .dark-mode .cell.entrance .cell-core,
+        .dark-mode .cell.gate .cell-core,
+        .dark-mode .cell.gate-up .cell-path.up,
+        .dark-mode .cell.gate-down .cell-path.down,
+        .dark-mode .cell.gate-left .cell-path.left,
+        .dark-mode .cell.gate-right .cell-path.right {
+            background-color: #19b2b8 !important;
+        }
+
+        .dark-mode .cell.up .cell-path.main.up,
+        .dark-mode .cell.down .cell-path.main.down,
+        .dark-mode .cell.left .cell-path.main.left,
+        .dark-mode .cell.right .cell-path.main.right {
+            background-color: #777879;
+        }
+
+        .dark-mode .label-boss,
+        .dark-mode .cell.boss .cell-core {
+            background-color: #ec8b1b !important;
+        }
+
+        .dark-mode .label-guardian,
+        .dark-mode .cell.guardian .cell-core {
+            background-color: #28ac2f !important;
+        }
+        
+        .dark-mode .label-guardian-90,
+        .dark-mode .cell.guardian-90 .cell-core {
+            background-color: #7cb91b;
+        }
+
+        .dark-mode .label-trap-90,
+        .cell.trap-90 .cell-core {
+            background-color: #b92456;
         }
 
         .dark-mode .label-completed,
@@ -800,11 +837,11 @@
 
             $(`#underspire-info`).html(`
                 <div class="line"> 已经完成节点：${completen}</div>
-                <div class="line"> 全清 ${mainn} 牢龙还需约：${main$}</div>
+                <div class="line"> 全清 ${mainn} 牢龙还需约：${main$ - 1}</div>
                 <div class="line"> 全清 ${guardiann} 守卫还需约：${guardian$}</div>
                 <div class="line"> 全清 ${treasuren} 宝藏还需约：${treasure$}</div>
                 <div class="line"> 全清 ${trapn} 陷阱还需约：${trap$}</div>
-                <div class="line">     共计约：${main$ + guardian$ + treasure$ + trap$}</div>
+                <div class="line">     共计约：${main$ - 1 + guardian$ + treasure$ + trap$}</div>
             `)
             
         }
