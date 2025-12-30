@@ -25,6 +25,7 @@
         }
 
         #tool-panel {
+            /* background-color: #00f80c; */
             width: 200px;
             height: 600px;
             position: fixed;
@@ -36,8 +37,8 @@
         }
 
         .tool-line {
-            float: right;
             padding-right: 5px;
+            min-height: 25px;
         }
         
         .dark-switch label {
@@ -270,21 +271,37 @@
 <body class="light-mode">
     <script src="./jquery-3.6.0.min.js"></script>
     <script src="./bootstrap.bundle.min.js"></script>
-    <div id="underspire-input" class="row g-3">
+    <script src="./notify.js"></script>
+    <script src="../wogapi.js"></script>
+    <!-- <div id="underspire-input" class="row g-3">
         <div class="col-11">
           <input type="text" class="form-control form-control-sm" placeholder="THE DATA YOU FOUND">
         </div>
         <div class="col-1">
           <button type="submit" class="btn btn-success btn-sm mb-3" style="width: 80px;">go</button>
         </div>
-    </div>
+    </div> -->
 
     <div id="tool-panel">
         <div class="tool-line">
-            <div class="form-check dark-switch">
-                <input class="form-check-input switch-tip" type="checkbox" id="icb-dark-switch" value="option2">
-                <label class="form-check-label" for="icb-dark-switch">深色主题</label>
+            <div class="float-end form-check form-switch">
+                <div class="form-check dark-switch">
+                    <input class="form-check-input switch-tip" type="checkbox" role="switch"  id="icb-dark-switch" value="option2">
+                    <label class="form-check-label" for="icb-dark-switch">深色主题</label>
+                </div>
             </div>
+        </div>
+        <div style="margin-top: 5px; margin-bottom: 5px;">
+            &nbsp;
+        </div>
+        <div class="tool-line" style="padding: 10px;">
+            <input id="input-usercode" class="form-control form-control-sm" type="text" placeholder="邀请码">
+        </div>
+        <div class="tool-line" style="padding: 10px;">
+            <input id="input-password" class="form-control form-control-sm" type="password" placeholder="密码">
+        </div>
+        <div class="tool-line" style="padding: 10px;">
+            <button id="button-sync" type="button" class="float-end btn btn-sm btn-warning">同步数据</button>
         </div>
     </div>
 
@@ -333,6 +350,12 @@
         let information = "";
         let fuzzies = {};
         let switches = {};
+        let player = {
+            usercode: ``,
+            username: ``,
+            password: ``,
+            mapat: 0
+        }
 
         const CELL_TYPE_ENTRANCE = 0x01;
         const CELL_TYPE_GUARDIAN_2 = 0x02;
@@ -436,6 +459,27 @@
                 darkmode: $("#icb-dark-switch").is(":checked")
             }
             localStorage.setItem("USSWITCH", JSON.stringify(switches))
+        }
+
+        const loadPlayer = () => {
+            const str = localStorage.getItem("WOGPLAYER");
+            if (!!str) {
+                j = JSON.parse(str);
+                player = j
+                $("#input-usercode").val(player.usercode)
+                $("#input-password").val(player.password)
+            }
+        }
+
+        const savePlayer = () => {
+            localStorage.setItem("WOGPLAYER", JSON.stringify(player))
+        }
+
+        const getUnderspireId = () => {
+            const now = new Date()
+            const from = new Date(`Tue Dec 29 2025 15:00:00 GMT+0800`)
+            const off = (now.getTime() - from.getTime()) / (7 * 24 * 3600 * 1000) | 0
+            return off + 416
         }
 
         const build = (UnderspireData) => {
@@ -835,7 +879,10 @@
             // console.log(`trap$ ${trap$}`)
             // window.$pnt = parents
 
+            const at = new Date()
+            at.setTime(player.mapat)
             $(`#underspire-info`).html(`
+                <div class="line"> 地图同于时间：${at}</div>
                 <div class="line"> 已经完成节点：${completen}</div>
                 <div class="line"> 全清 ${mainn} 牢龙还需约：${main$}</div>
                 <div class="line"> 全清 ${guardiann} 守卫还需约：${guardian$}</div>
@@ -844,6 +891,7 @@
                 <div class="line">     共计约：${main$ + guardian$ + treasure$ + trap$}</div>
             `)
             
+            $.notify("尖塔信息", {className: 'success',  position: "top" });
         }
 
         $("#underspire-input button").click(() => {
@@ -881,8 +929,60 @@
             applyDarkMode()
         })
 
-        const saveMap = (str) => {
-            localStorage.setItem("USMAP", str);
+        let syncing = false;
+
+        $(`#button-sync`).click(async () => {
+            if (syncing) {
+                return ;
+            }
+
+            $(`#button-sync`).text('正在同步')
+            syncing = true;
+            try {
+
+                const code = $(`#input-usercode`).val()
+                const pass = $(`#input-password`).val()
+                if (!code || !pass) {
+                    $.notify(`输入邀请码、密码`, "error");
+                    return 
+                }
+
+                if (!player.username || player.usercode != code || player.password != pass) {
+                    const userid = await $wog.GetUserId(code)
+                    if (!userid) {
+                        $.notify(`查找用户${code}失败`, "error");
+                        return 
+                    }
+                    const profile = await $wog.GetUserProfile(userid)
+                    if (!profile || !profile.username) {
+                        $.notify(`查找用户${code}失败`, "error");
+                        return
+                    }
+                    player.usercode = code
+                    player.password = pass
+                    player.username = profile.username
+                    savePlayer()
+                }
+
+                const underspire = await $wog.GetUnderspire(player.username, player.password, getUnderspireId())
+                if (!underspire) {
+                    $.notify("同步尖塔信息失败", "error");
+                    return
+                }
+
+                saveMap(underspire.UnderspireData)
+                build(underspire.UnderspireData)
+            }
+            finally {
+                syncing = false
+                $(`#button-sync`).text('同步数据')
+            }
+        })
+
+        const saveMap = (data) => {
+            player.mapat = new Date().getTime()
+            savePlayer()
+            localStorage.setItem("USMAP", JSON.stringify(data))
         }
 
         const loadMap = () => {
@@ -893,11 +993,12 @@
         }
         
         $(`.switch-tip`).change(() => {
-            saveSwitch() 
+            saveSwitch()
             loadMap()
         });
 
         loadSwitch()
+        loadPlayer()
         applyDarkMode()
         loadMap()
     </script>
