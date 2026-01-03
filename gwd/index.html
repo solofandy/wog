@@ -30,15 +30,12 @@
             width: 120px;
         }
 
-        #guild-name {
+        #guild-select {
             width: 200px;
             margin: auto;
             text-align: center;
-            color: white;
             font-size: 16px;
-            padding-top: 14px;
             cursor: pointer;
-            text-decoration: underline;
         }
 
         #content-submit {
@@ -54,6 +51,12 @@
             width: 1800px!important;
             background-color: #144f4f;
             border-radius: 4px;
+        }
+
+        #keep-guildname {
+            color: #fefefe;
+            font-size: 16px;
+            margin-top: -50px;
         }
 
         #keep-content {
@@ -180,19 +183,45 @@
     <script src="./jquery-3.6.0.min.js"></script>
     <script src="./bootstrap.bundle.min.js"></script>
     <script src="./notify.js"></script>
+    <script src="../wogapi.js"></script>
 
     <div id="header">
         <div id="header-content">
             <div style="display: flex; float: left;">
-                <input id="content-input" type="text" class="form-control form-control-sm" placeholder="PASTE">
-                <button id="content-submit" type="submit" class="btn btn-success btn-sm">go</button>
+                <!-- <input id="content-input" type="text" class="form-control form-control-sm" placeholder="PASTE">
+                <button id="content-submit" type="submit" class="btn btn-success btn-sm">go</button> -->
+                <div class="tool-line" style="padding: 10px;">
+                    <input id="input-usercode" class="form-control form-control-sm" type="text" placeholder="邀请码">
+                </div>
+                <div class="tool-line" style="padding: 10px;">
+                    <input id="input-password" class="form-control form-control-sm" type="password" placeholder="密码">
+                </div>
+                <div class="tool-line" style="padding: 10px;">
+                    <input id="input-eventid" class="form-control form-control-sm" type="number" placeholder="会战ID">
+                </div>
+                <div class="tool-line" style="padding: 10px;">
+                    <button id="button-sync" type="button" class="float-end btn btn-sm btn-warning">同步数据</button>
+                </div>
             </div>
-            <div id="guild-name">
-
+            <div id="guild-select">
+                <div class="tool-line" style="padding: 10px;">
+                    <select id="select-day" class="form-select form-select-sm mb-3" aria-label=".form-select-sm">
+                        <option value="4">本会</option>
+                        <option value="0">DAY 1</option>
+                        <option value="1">DAY 2</option>
+                        <option value="2">DAY 3</option>
+                        <option value="3">DAY 4</option>
+                    </select>
+                </div>
             </div>
         </div>
     </div>
     <div id="main-content">
+        <div class="row">
+            <div id="keep-guildname">
+
+            </div>
+        </div>
         <div class="row" id="keep-content">
             <div class="col-3 spot-col" id="spot-col-1"> </div>
             <div class="col-3 spot-col" id="spot-col-2"> </div>
@@ -265,6 +294,8 @@
     </script>
 
     <script>
+        var conf = {}
+        var keeps = []
 
         const WE = `We`;
         var current = '';
@@ -402,7 +433,7 @@
             $("#spot-col-4").append(`<div class="offset"> </div>`)
             $("#spot-col-4").append(generate_spot(guild.defenders[4][0]));
 
-            $("#guild-name").text(guild.name);
+            $("#keep-guildname").text(guild.name);
 
             $(`.spot-guy`).dblclick(async (e) => {
                 const team = '[' + $(e.currentTarget).attr('team') + ']';
@@ -424,6 +455,83 @@
             }
         }
 
+        const load = () => {
+            if ($wog.loadPlayer()) {
+                $("#input-usercode").val($wog.player.usercode)
+                $("#input-password").val($wog.player.password)
+            }
+            conf = $wog.$get(`KEEP_CONFIG`)
+            if (conf.eventid) {
+                $(`#input-eventid`).val(conf.eventid)
+            }
+            keeps = $wog.$get(`KEEP_DATA`)
+            if (keeps.length > 0) {
+                $(`#select-day`).val(0)
+                render(keeps[0])
+            }
+        }
+
+        const save = () => {
+            $wog.savePlayer()
+            conf.eventid = parseInt($(`#input-eventid`).val())
+            conf.guildKeepAt = new Date().getTime(),
+            $wog.$set(`KEEP_CONFIG`, conf)
+            $wog.$set(`KEEP_DATA`, keeps)
+        }
+
+        let syncing = false;
+        
+        const sync = async () => {
+            if (syncing) {
+                return
+            }
+
+            syncing = true
+            $(`#button-sync`).text('正在同步')
+            try {
+                const code = $(`#input-usercode`).val()
+                const pass = $(`#input-password`).val()
+                const eventid = parseInt($(`#input-eventid`).val()) || 0
+                if (!code || !pass || !eventid) {
+                    $.notify(`输入邀请码、密码、ID`, "error");
+                    return 
+                }
+
+                if (!$wog.player.username || $wog.player.usercode != code || $wog.player.password != pass) {
+                    const userid = await $wog.GetUserId(code)
+                    if (!userid) {
+                        $.notify(`查找用户${code}失败`, "error");
+                        return 
+                    }
+                    const profile = await $wog.GetUserProfile(userid)
+                    if (!profile || !profile.username) {
+                        $.notify(`查找用户${code}失败`, "error");
+                        return
+                    }
+                    $wog.player.usercode = code
+                    $wog.player.password = pass
+                    $wog.player.username = profile.username
+                    save()
+                }
+
+                keeps = []
+                for (const day of [0, 1, 2, 3]) {
+                    const ans = await $wog.GetGuildKeep($wog.player.username, $wog.player.password, eventid, day)
+                    if (`OpponentKeepData` in ans) {
+                        keeps.push(ans.OpponentKeepData)
+                    }
+                    if (day == 3) {
+                        keeps.push(ans.MyKeepData)
+                    }
+                }
+                save()
+            }
+            finally {
+                syncing = false
+                $(`#button-sync`).text('同步数据')
+            }
+        }
+
         $(`#content-submit`).click(() => {
             const content = $(`#content-input`).val();
             if (content) {
@@ -440,12 +548,21 @@
             toggle();
         })
 
+        $(`#select-day`).change(() => {
+            const day = $(`#select-day`).val()
+            render(keeps[day])
+        })
+
         if (`KeepColour` in vs) {
             current = 'VS';
             render(vs);
         }
 
         $.notify("双击复制阵容", "info");
+        
+        load()
+
+        $(`#button-sync`).click(sync)
 
     </script>
 

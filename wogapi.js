@@ -3,6 +3,36 @@ class Wogapi {
         version: "9.0.0r78410",
     }
 
+    player = {
+        usercode: null,
+        username: null,
+        password: null,
+        underspireAt: 0
+    }
+
+    $get(key) {
+        const str = localStorage.getItem(key);
+        if (!!str) {
+            return JSON.parse(str)
+        }
+        else {
+            return {}
+        }
+    }
+
+    $set(key, val) {
+        localStorage.setItem(key, JSON.stringify(val))
+    }
+
+    loadPlayer() {
+        this.player = this.$get("WOGPLAYER")
+        return this.player.usercode !== ``
+    }
+
+    savePlayer() {
+        this.$set(`WOGPLAYER`, this.player)
+    }
+
     CALL =  `https://pcmob.parse.gemsofwar.com/call_function`
 
     async Call(request) {
@@ -89,6 +119,31 @@ class Wogapi {
             }
             else {
                 return ans.Info;
+            }
+        }
+        catch(e) {
+            return false;
+        }
+    }
+
+    async GetGuildKeep(username, password, eventid, day /* 0 - 3 */) {
+        const req = {
+            username, 
+            password,
+            clientVersion: this.config.version,
+            platform: `PC_CLIENT`,
+            functionName: `guild_wars_get_guild_keep_data`,
+            NumWars: 4,
+            WarDay: day,
+            EventId: eventid
+        }
+        try {
+            const ans = await this.Call(req)
+            if (!ans || !ans.GuildKeepData) {
+                return null
+            }
+            else {
+                return ans.GuildKeepData;
             }
         }
         catch(e) {
