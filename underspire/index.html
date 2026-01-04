@@ -508,7 +508,7 @@
                 treasures[treasure.RoomId] = treasure;
             }
 
-            const isTreasure = (row, col, value = 0) => {
+            const isTreasure = (row, col) => {
                 const num = row * 100 + col;
                 if (!(num in treasures)) {
                     return false;
@@ -667,7 +667,7 @@
                     else if (getCellType(value) == 0) {
 
                     }
-                    else if (isTreasure(row, col, value) && hasSwitch("treasures")) {
+                    else if (isTreasure(row, col) && hasSwitch("treasures")) {
                         $(`#${getCellDomId(row, col)}`).addClass('guardian-90');
                     }
                     else if (isPotral(row, col, value)) {
@@ -788,7 +788,7 @@
                 for (const num in treasures) {
                     const treasure = treasures[num]
                     let { row, col } = treasure
-                    if (isUnseen(row, col)) {
+                    if (isUnseen(row, col) && isTreasure(row, col)) {
                         treasuren ++
                     }
                 }
@@ -851,6 +851,9 @@
                 for (const num in treasures) {
                     const treasure = treasures[num]
                     let { row, col } = treasure
+                    if (!isTreasure(row, col)) {
+                        continue
+                    }
                     while (isUnseen(row, col) && row >= 0) {
                         treasure$ ++
                         const num = getCellNum(row, col)
