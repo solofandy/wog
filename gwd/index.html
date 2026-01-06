@@ -409,6 +409,10 @@
         }
 
         function render(keep) {
+            if (!keep) {
+                return
+            }
+            
             const guild = purify_guild(keep)
             $("#spot-col-1").empty();
             $("#spot-col-1").append(`<div class="offset"> </div>`)
@@ -453,7 +457,9 @@
             keeps = $wog.$get(`KEEP_DATA`)
             if (keeps.length > 0) {
                 $(`#select-day`).val(0)
-                render(keeps[0])
+                if (keeps[0]) {
+                    render(keeps[0])
+                }
             }
         }
 
