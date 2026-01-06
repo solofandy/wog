@@ -298,9 +298,6 @@
         var keeps = []
 
         const WE = `We`;
-        var current = '';
-        var we = JSON.parse(localStorage.getItem("KEEP_WE") || '{}');
-        var vs = JSON.parse(localStorage.getItem("KEEP_VS") || '{}');
 
         function purify_guild(keep) {
 
@@ -444,17 +441,6 @@
             });
         }
 
-        function toggle() {
-            if (current == '' || current == WE) {
-                current = 'VS';
-                render(vs);
-            }
-            else {
-                current = WE;
-                render(we);
-            }
-        }
-
         const load = () => {
             if ($wog.loadPlayer()) {
                 $("#input-usercode").val($wog.player.usercode)
@@ -532,6 +518,7 @@
             }
         }
 
+        /*
         $(`#content-submit`).click(() => {
             const content = $(`#content-input`).val();
             if (content) {
@@ -543,6 +530,7 @@
                 render(vs);
             }
         });
+        */
 
         $(`#guild-name`).click(() => {
             toggle();
@@ -550,13 +538,10 @@
 
         $(`#select-day`).change(() => {
             const day = $(`#select-day`).val()
-            render(keeps[day])
+            if (day < keeps.length && keeps[day]) {
+                render(keeps[day])
+            }
         })
-
-        if (`KeepColour` in vs) {
-            current = 'VS';
-            render(vs);
-        }
 
         $.notify("双击复制阵容", "info");
         
