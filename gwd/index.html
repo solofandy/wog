@@ -445,6 +445,13 @@
             });
         }
 
+        const impression = () => {
+            if (keeps.length > 0) {
+                $(`#select-day`).val(0)
+                render(keeps[0])
+            }
+        }
+
         const load = () => {
             if ($wog.loadPlayer()) {
                 $("#input-usercode").val($wog.player.usercode)
@@ -455,12 +462,7 @@
                 $(`#input-eventid`).val(conf.eventid)
             }
             keeps = $wog.$get(`KEEP_DATA`)
-            if (keeps.length > 0) {
-                $(`#select-day`).val(0)
-                if (keeps[0]) {
-                    render(keeps[0])
-                }
-            }
+            impression()
         }
 
         const save = () => {
@@ -517,6 +519,7 @@
                     }
                 }
                 save()
+                impression()
             }
             finally {
                 syncing = false
