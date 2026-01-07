@@ -277,17 +277,24 @@
             const restrictions = {
                 wargare: `神社・狼族`,
                 wildfolk: "林间空地・蛮族",
+                fey: "仙女戒指・妖仙",
+                rogue: "盗贼行会・盗贼",
 
+                mystic:  "法师塔・秘士",
                 elemental: "门户网站・元素",
                 elf: "弗莱彻・精灵",
                 goblin: "厨房・哥布林",
 
-                
+                stryx: "鹰巢城・鸟族",
                 divine: "寺庙・神祇",
                 naga: "药剂师・娜迦",
                 tauros: "迷宫・牛头",
+                undead: "墓穴・不死族",
 
-                green: "宫殿・绿色"
+                red:  "宫殿・红色",
+                blue: "宫殿・蓝色",
+                green: "宫殿・绿色",
+                purple: "宫殿・紫色",
             }
             return restriction in restrictions ? restrictions[restriction] : restriction;
         }
@@ -347,6 +354,10 @@
 
         function generate_guy(guy) {
             const hide_name = (name) => {
+                if (!name) {
+                    return ' '
+                }
+                name = name.replace(/[<>]/g, "")
                 if (location.search.match(/fullname/i)) {
                     return name;
                 }
