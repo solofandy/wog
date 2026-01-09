@@ -468,11 +468,11 @@
                 $("#input-usercode").val($wog.player.usercode)
                 $("#input-password").val($wog.player.password)
             }
-            conf = $wog.$get(`KEEP_CONFIG`)
+            conf = $wog.$get(`KEEP_CONFIG`) || {}
             if (conf.eventid) {
                 $(`#input-eventid`).val(conf.eventid)
             }
-            keeps = $wog.$get(`KEEP_DATA`)
+            keeps = $wog.$get(`KEEP_DATA`) || []
             impression()
         }
 

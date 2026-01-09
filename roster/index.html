@@ -1,0 +1,321 @@
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GOW - Roster</title>
+    <link href="./bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-size: 12px;
+            text-align: center;
+            background-color: #151a1a;
+        }
+
+        #header {
+            height: 50px;
+            background-color: #001818;
+        }
+
+        #header-content {
+            margin: 0 auto;
+            width: 1800px;
+        }
+
+        #content-input {
+            margin-top: 10px;
+            height: 30px;
+            width: 120px;
+        }
+
+        #guild-select {
+            width: 200px;
+            margin: auto;
+            text-align: center;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #content-submit {
+            height: 30px;
+            margin-top: 10px;
+            margin-left: 4px;
+        }
+
+        #main-content {
+            padding-top: 20px;
+            padding-bottom: 50px;
+            margin: 10px auto;
+            width: 1800px!important;
+            background-color: #144f4f;
+            border-radius: 4px;
+        }
+
+        #guild-title {
+            font-family: 'Courier New', Courier, monospace;
+            color: #ccc;
+            text-align: center;
+            font-size: 16px;
+            padding: 10px 0 30px 0;
+        }
+
+        #guild-score {
+            font-family: 'Courier New', Courier, monospace;
+            color: #ccc;
+        }
+
+        #guild-score th,
+        #guild-score td {
+            width: 250px;
+            text-align: right;
+            padding: 4px 0;
+        }
+
+        #guild-score .index {
+            width: 100px;
+            text-align: center;
+        }
+
+        #guild-score .name {
+            text-align: center;
+        }
+        
+    </style>
+
+</head>
+
+<body>
+    <!-- 
+    <script src="https://unpkg.com/vue"></script>
+    <script src="https://unpkg.com/http-vue-loader"></script> 
+-->
+    <script src="./jquery-3.6.0.min.js"></script>
+    <script src="./bootstrap.bundle.min.js"></script>
+    <script src="./notify.js"></script>
+    <script src="../wogapi.js"></script>
+
+    <div id="header">
+        <div id="header-content">
+            <div style="display: flex; float: left;">
+                <div class="tool-line" style="padding: 10px;">
+                    <input id="input-guild-id" class="form-control form-control-sm" type="text" placeholder="工会ID">
+                </div>
+                <div class="tool-line" style="padding: 10px;">
+                    <input id="input-guild-name" class="form-control form-control-sm" type="text" placeholder="工会名">
+                </div>
+                <div class="tool-line" style="padding: 10px;">
+                    <button id="button-guild-add" type="button" class="float-end btn btn-sm btn-success">添加</button>
+                </div>
+            </div>
+            <div style="display: flex; float: right;">
+                <div class="tool-line" style="padding: 10px;">
+                    <button id="button-guild-sync" type="button" class="float-end btn btn-sm btn-warning">同步数据</button>
+                </div>
+            </div>
+            <div id="guild-select">
+                <div class="tool-line" style="padding: 10px;">
+                    <select id="select-guild" class="form-select form-select-sm mb-3" aria-label=".form-select-sm"> </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="main-content">
+        <div class="row">
+            <div id="guild-title"></div>
+        </div>
+        <table id="guild-score">
+            <thead>
+                <tr>
+                    <th class="index">#</th>
+                    <th class="name"></th>
+                    <th>总分</th>
+                    <th>DAY 1</th>
+                    <th>DAY 2</th>
+                    <th>DAY 3</th>
+                    <th>DAY 4</th>
+                </tr>
+            </thead>
+            <tbody>
+
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        var guilds = []
+        var conf = {}
+
+        const GetGuildName = (id) => {
+            const guild = guilds.find(g => g.id == id)
+            return !guild ? `` : guild.name
+        }
+
+        const LoadGuilds = () => {
+            $wog.loadPlayer()
+            conf = $wog.$get(`KEEP_CONFIG`) || {}
+            
+            if (!$wog.player.username || !$wog.player.password || !conf.eventid) {
+                $.notify(`加载玩家信息失败`, {className: 'error',  position: "top-left" })
+            }
+            else {
+                $.notify(`已加载 ${$wog.player.usercode} @ ${conf.eventid}`, {className: 'success',  position: "top-left" })
+            }
+            guilds = $wog.$get(`ROSTER_GUILDS`) || []
+        }
+
+        const SaveGuilds = () => {
+            $wog.$set(`ROSTER_GUILDS`, guilds)
+        }
+
+        const LoadGuildRoster = (id) => {
+            return $wog.$get(`ROSTER_${id}`)
+        }
+
+        const SaveGuildRoster = (id, name, scores) => {
+            const roster = {
+                id, 
+                name,
+                scores,
+                at: new Date().getTime(),
+            }
+            $wog.$set(`ROSTER_${id}`, roster)
+            return roster
+        }
+
+        const BuildGuildList = () => {
+            $(`#select-guild option`).remove()
+            for (const guild of guilds) {
+                $(`#select-guild`).append($('<option>', {
+                    value: guild.id,
+                    text: guild.name
+                }));
+            }
+        }
+
+        const Render = (roster) => {
+            if (!roster) {
+                return
+            }
+
+            const at = new Date()
+            at.setTime(roster.at)
+
+            $(`#guild-title`).text(`${roster.name} / ${at}` )
+
+            let i = 1
+            const scores = roster.scores.sort((x, y) => y.ScoreCurrent - x.ScoreCurrent)
+            $(`#guild-score tbody tr`).remove()
+            for (const guy of scores) {
+                $(`#guild-score tbody`).append(`
+                    <tr>
+                        <td class="index">${i++}</td>
+                        <td class="name">${guy.Name}</td>
+                        <td>${guy.ScoreCurrent}</td>
+                        <td>${guy.WarResults[0].W} / ${guy.WarResults[0].L}</td>
+                        <td>${guy.WarResults[1].W} / ${guy.WarResults[1].L}</td>
+                        <td>${guy.WarResults[2].W} / ${guy.WarResults[2].L}</td>
+                        <td>${guy.WarResults[3].W} / ${guy.WarResults[3].L}</td>
+                    </tr>
+                `)
+            }
+
+            let total = {
+                Name: "TOTAL",
+                ScoreCurrent: 0,
+                WarResults: [
+                    { W: 0, L: 0 },
+                    { W: 0, L: 0 },
+                    { W: 0, L: 0 },
+                    { W: 0, L: 0 }
+                ]
+            }
+            for (const guy of scores) {
+                total.ScoreCurrent += guy.ScoreCurrent
+                for (let d = 0; d < 4; d++) {
+                    total.WarResults[d].W += guy.WarResults[d].W 
+                    total.WarResults[d].L += guy.WarResults[d].L
+                }
+            }
+            $(`#guild-score tbody`).append(`
+                <tr>
+                    <td class="index"></td>
+                    <td class="name">&nbsp;</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            `)
+            $(`#guild-score tbody`).append(`
+                <tr>
+                    <td class="index">TOTAL</td>
+                    <td class="name">&nbsp;</td>
+                    <td>${total.ScoreCurrent}</td>
+                    <td>${total.WarResults[0].W} / ${total.WarResults[0].L}</td>
+                    <td>${total.WarResults[1].W} / ${total.WarResults[1].L}</td>
+                    <td>${total.WarResults[2].W} / ${total.WarResults[2].L}</td>
+                    <td>${total.WarResults[3].W} / ${total.WarResults[3].L}</td>
+                </tr>
+            `)
+
+            window.$roster = roster
+            $.notify(`${roster.name}`, {className: 'success',  position: "top-left" })
+        }
+
+        const Go = (id) => {
+            const roster = LoadGuildRoster(id)
+            if (roster) {
+                Render(roster)
+            }
+        }
+
+        $(`#button-guild-add`).click(() => {
+            const id = $(`#input-guild-id`).val()
+            const name = $(`#input-guild-name`).val()
+            const exists = guilds.find(guild => guild.id == id)
+            if (!exists) {
+                guilds.push({ id, name })
+                SaveGuilds()
+                BuildGuildList()
+            }
+        })
+
+        $(`#button-guild-sync`).click(async () => {
+            const id = $(`#select-guild`).val()
+            const name = GetGuildName(id)
+            if (!name) {
+                return
+            }
+
+            const guys = await $wog.GetGuildRoster(id, 5377)
+            if (!guys || !(length in guys)) {
+                $.notify(`查询失败`, {className: 'error',  position: "top-left" })
+            }
+            else {
+                const roster = SaveGuildRoster(id, name, guys)
+                Render(roster)
+            }
+        })
+
+        $(`#select-guild`).change(() => {
+            const id = $(`#select-guild`).val()
+            Go(id)
+        })
+
+        LoadGuilds()
+        BuildGuildList()
+
+        if (guilds.length > 0) {
+            const id = guilds[0].id
+            $(`#select-guild`).val(id)
+            Go(id)
+        }
+
+    </script>
+
+
+
+</body>

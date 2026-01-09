@@ -16,7 +16,7 @@ class Wogapi {
             return JSON.parse(str)
         }
         else {
-            return {}
+            return null
         }
     }
 
@@ -25,7 +25,7 @@ class Wogapi {
     }
 
     loadPlayer() {
-        this.player = this.$get("WOGPLAYER")
+        this.player = this.$get("WOGPLAYER") || {}
         return this.player.usercode !== ``
     }
 
@@ -144,6 +144,30 @@ class Wogapi {
             }
             else {
                 return ans.GuildKeepData;
+            }
+        }
+        catch(e) {
+            return false;
+        }
+    }
+
+    async GetGuildRoster(id, eventid) {
+        const req = {
+            username: this.player.username, 
+            password: this.player.password,
+            clientVersion: this.config.version,
+            platform: `PC_CLIENT`,
+            functionName: `guild_wars_get_guild_keep_roster_data`,
+            EventId: eventid,
+            GuildId: id
+        }
+        try {
+            const ans = await this.Call(req)
+            if (!ans || !ans.GuildKeepRosterDataList) {
+                return null
+            }
+            else {
+                return ans.GuildKeepRosterDataList;
             }
         }
         catch(e) {
