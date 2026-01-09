@@ -111,7 +111,8 @@
             </div>
             <div style="display: flex; float: right;">
                 <div class="tool-line" style="padding: 10px;">
-                    <button id="button-guild-sync" type="button" class="float-end btn btn-sm btn-warning">同步数据</button>
+                    <button id="button-guild-remove" type="button" class="float-end btn btn-sm btn-danger">移除工会</button>
+                    <button id="button-guild-sync" type="button" class="float-end btn btn-sm btn-warning" style="margin-right: 10px">同步数据</button>
                 </div>
             </div>
             <div id="guild-select">
@@ -283,20 +284,48 @@
             }
         })
 
-        $(`#button-guild-sync`).click(async () => {
+        $(`#button-guild-remove`).click(() => {
             const id = $(`#select-guild`).val()
             const name = GetGuildName(id)
-            if (!name) {
+            guilds = guilds.filter(g => g.id != id)
+            SaveGuilds()
+            BuildGuildList()
+            if (guilds.length > 0) {
+                const id = guilds[0].id
+                $(`#select-guild`).val(id)
+                Go(id)
+            }
+            $.notify(`移除 ${name}`, {className: 'success',  position: "top-left" })
+        })
+        
+        let syncing = false;
+
+        $(`#button-guild-sync`).click(async () => {
+            if (syncing) {
                 return
             }
 
-            const guys = await $wog.GetGuildRoster(id, 5377)
-            if (!guys || !(length in guys)) {
-                $.notify(`查询失败`, {className: 'error',  position: "top-left" })
+            syncing = true
+            $(`#button-guild-sync`).text('正在同步')
+            try {
+                const id = $(`#select-guild`).val()
+                const name = GetGuildName(id)
+                if (!name) {
+                    return
+                }
+
+                const guys = await $wog.GetGuildRoster(id, 5377)
+                if (!guys || !(length in guys)) {
+                    $.notify(`查询失败`, {className: 'error',  position: "top-left" })
+                }
+                else {
+                    const roster = SaveGuildRoster(id, name, guys)
+                    Render(roster)
+                }
             }
-            else {
-                const roster = SaveGuildRoster(id, name, guys)
-                Render(roster)
+            finally {
+                $(`#button-guild-sync`).text('同步数据')
+                syncing = false
             }
         })
 
