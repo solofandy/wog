@@ -886,7 +886,7 @@
             const at = new Date()
             at.setTime(player.mapat)
             $(`#underspire-info`).html(`
-                <div class="line"> 同步时间：${at}</div>
+                <div class="line"> 同步时间：${at.toLocaleString()}</div>
                 <div class="line"> 已经完成节点：${completen}</div>
                 <div class="line"> 全清 ${mainn} 牢龙还需约：${main$}</div>
                 <div class="line"> 全清 ${guardiann} 守卫还需约：${guardian$}</div>

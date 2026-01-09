@@ -203,7 +203,7 @@
             const at = new Date()
             at.setTime(roster.at)
 
-            $(`#guild-title`).text(`${roster.name} / ${at}` )
+            $(`#guild-title`).text(`${roster.name} / ${at.toLocaleString()}` )
 
             let i = 1
             const scores = roster.scores.sort((x, y) => y.ScoreCurrent - x.ScoreCurrent)
