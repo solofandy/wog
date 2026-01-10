@@ -98,6 +98,7 @@
     <script src="./jquery-3.6.0.min.js"></script>
     <script src="./bootstrap.bundle.min.js"></script>
     <script src="./notify.js"></script>
+    <script src="./FileSaver.min.js"></script>
     <script src="../wogapi.js"></script>
 
     <div id="header">
@@ -148,10 +149,26 @@
         </table>
     </div>
 
+    <div style="display: flex; float: right;">
+        <div class="tool-line" style="padding: 20px 50px;">
+            <button id="button-export-json" type="button" class="float-end btn btn-sm btn-primary">导出 JSON</button>
+            <button id="button-export-csv" type="button" class="float-end btn btn-sm btn-primary" style="margin: 0 10px;">导出 CSV </button>
+        </div>
+    </div>
+
     <script>
-        var guilds = []
-        var conf = {}
-        var orderby = ''
+        let GWDAY = `2026/01/08`
+        let guilds = [ ]
+        let conf = { }
+        let rosters = { }
+        let orderby = ''
+
+        const GetGWDay = () => {
+            const base = new Date(`${GWDAY} 15:00:00 GMT+0800`)
+            const now = new Date()
+            const day = ((now.getTime() - base.getTime()) / (24 * 3600 * 1000)) | 0
+            return Math.min(day, 3)
+        }
 
         const GetGuildName = (id) => {
             const guild = guilds.find(g => g.id == id)
@@ -169,6 +186,8 @@
                 $.notify(`已加载 ${$wog.player.usercode} @ ${conf.eventid}`, {className: 'success',  position: "top-left" })
             }
             guilds = $wog.$get(`ROSTER_GUILDS`) || []
+
+            rosters = $wog.$get(`ROSTERS`)
         }
 
         const SaveGuilds = () => {
@@ -176,20 +195,16 @@
         }
 
         const LoadGuildRoster = (id) => {
-            const roster = $wog.$get(`ROSTER_${id}`)
-            return roster.eventid && roster.eventid != conf.eventid ? null : roster
-        }
-
-        const GetGWDay = () => {
-            const now = new Date()
-            now.setTime(now.getTime() - 15 * 3600 * 1000)
-            return now.getDay() - 4
+            const roster = (id in rosters) ? rosters[id] : $wog.$get(`ROSTER_${id}`)
+            return (roster.eventid === conf.eventid) ? roster : { }
         }
 
         const SaveGuildRoster = (id, name, scores) => {
+            
             const exists = LoadGuildRoster(id)
+
             const getDayScore = (name, day) => {
-                if (!exists) {
+                if (!exists.scores) {
                     return 0
                 }
                 const g = exists.scores.find(g => g.Name == name)
@@ -199,26 +214,32 @@
                 return g.WarResults[day].S || 0
             }
 
+            const day = GetGWDay()
+            
             const roster = {
                 id, 
+                day,
                 name,
                 scores,
                 eventid: conf.eventid,
-                at: new Date().getTime(),
-                day: GetGWDay()
+                at: new Date().getTime()
             }
-            if (roster.day < 0 || roster.day >= 4) {
-                return null
-            }
+
+            roster.ticks = exists.ticks || [0, 0, 0, 0]
+            roster.ticks[day] = roster.at
+            
             for (const guy of roster.scores) {
                 let s = guy.ScoreCurrent
-                for (let d = 0; d <= roster.day - 1; d++) {
+                for (let d = 0; d <= day - 1; d++) {
                     guy.WarResults[d].S = getDayScore(guy.Name, d)
                     s = s - (guy.WarResults[d].S || 0)
                 }
-                guy.WarResults[roster.day].S = s
+                guy.WarResults[day].S = s
             }
-            $wog.$set(`ROSTER_${id}`, roster)
+
+            rosters[id] = roster
+            $wog.$set(`ROSTERS`, rosters)
+            //$wog.$set(`ROSTER_${id}`, roster)
             return roster
         }
 
@@ -402,7 +423,13 @@
 
         $(`#select-guild`).change(Go)
 
+        $(`#button-export-json`).click(() => {
+            const blob = new Blob([JSON.stringify(rosters, null, 2)], {type: "text/plain;charset=utf-8"})
+            saveAs(blob, `WOG-Rosters-${GWDAY.replace(/\//g, '-')}.json`)
+        })
+
         LoadGuilds()
+
         BuildGuildList()
 
         if (guilds.length > 0) {
