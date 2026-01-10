@@ -59,6 +59,7 @@
             text-align: center;
             font-size: 16px;
             padding: 10px 0 30px 0;
+            font-weight: bolder;
         }
 
         #guild-score {
@@ -70,7 +71,11 @@
         #guild-score td {
             width: 300px;
             text-align: center;
-            padding: 3px 0;
+        }
+
+        #guild-score th.orderable {
+            text-decoration: underline;
+            cursor: pointer;
         }
 
         #guild-score .index {
@@ -130,11 +135,11 @@
                 <tr>
                     <th class="index">#</th>
                     <th class="name"></th>
-                    <th>总分</th>
-                    <th>DAY 1</th>
-                    <th>DAY 2</th>
-                    <th>DAY 3</th>
-                    <th>DAY 4</th>
+                    <th class="orderable" order="-1">总分</th>
+                    <th class="orderable" order="0">DAY 1</th>
+                    <th class="orderable" order="1">DAY 2</th>
+                    <th class="orderable" order="2">DAY 3</th>
+                    <th class="orderable" order="3">DAY 4</th>
                 </tr>
             </thead>
             <tbody>
@@ -146,6 +151,7 @@
     <script>
         var guilds = []
         var conf = {}
+        var orderby = ''
 
         const GetGuildName = (id) => {
             const guild = guilds.find(g => g.id == id)
@@ -234,7 +240,20 @@
             $(`#guild-title`).text(`${roster.name}  ・  ${at.toLocaleString()}` )
 
             let i = 1
-            const scores = roster.scores.sort((x, y) => y.ScoreCurrent - x.ScoreCurrent)
+            const scores = roster.scores.sort((x, y) => {
+                orderby = parseInt(orderby)
+                if (orderby >= 0 && orderby <= 3) {
+                    const p = x.WarResults[orderby]
+                    const q = y.WarResults[orderby]
+                    if (p.W > q.W) return -1
+                    if (p.W < q.W) return 1
+                    return (q.S || 0) - (p.S ||0)
+                }
+                else {
+                    return y.ScoreCurrent - x.ScoreCurrent
+                }
+            })
+            console.log(orderby, scores)
             $(`#guild-score tbody tr`).remove()
             for (const guy of scores) {
                 $(`#guild-score tbody`).append(`
@@ -360,6 +379,11 @@
                 $(`#button-guild-sync`).text('同步数据')
                 syncing = false
             }
+        })
+
+        $(`#guild-score .orderable`).click(e => {
+            orderby = $(e.currentTarget).attr(`order`) || ``
+            Go()
         })
 
         $(`#select-guild`).change(Go)
