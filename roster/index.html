@@ -174,12 +174,29 @@
             return $wog.$get(`ROSTER_${id}`)
         }
 
+        const GetGWDay = () => {
+            const now = new Date()
+            now.setTime(now.getTime() - 15 * 3600 * 1000)
+            return now.getDay() - 4
+        }
+
         const SaveGuildRoster = (id, name, scores) => {
             const roster = {
                 id, 
                 name,
                 scores,
                 at: new Date().getTime(),
+                day: GetGWDay()
+            }
+            if (roster.day < 0 || roster.day >= 4) {
+                return null
+            }
+            for (const guy of roster.scores) {
+                let s = guy.ScoreCurrent
+                for (let d = 0; d < roster.day - 1; d++) {
+                    s = s - (guy.WarResults[d].S || 0)
+                }
+                guy.WarResults[roster.day].S = s
             }
             $wog.$set(`ROSTER_${id}`, roster)
             return roster
@@ -214,10 +231,10 @@
                         <td class="index">${i++}</td>
                         <td class="name">${guy.Name}</td>
                         <td>${guy.ScoreCurrent}</td>
-                        <td>${guy.WarResults[0].W} / ${guy.WarResults[0].L}</td>
-                        <td>${guy.WarResults[1].W} / ${guy.WarResults[1].L}</td>
-                        <td>${guy.WarResults[2].W} / ${guy.WarResults[2].L}</td>
-                        <td>${guy.WarResults[3].W} / ${guy.WarResults[3].L}</td>
+                        <td>${guy.WarResults[0].S || ''}  ${guy.WarResults[0].W}/${guy.WarResults[0].L}</td>
+                        <td>${guy.WarResults[1].S || ''}  ${guy.WarResults[1].W}/${guy.WarResults[1].L}</td>
+                        <td>${guy.WarResults[2].S || ''}  ${guy.WarResults[2].W}/${guy.WarResults[2].L}</td>
+                        <td>${guy.WarResults[3].S || ''}  ${guy.WarResults[3].W}/${guy.WarResults[3].L}</td>
                     </tr>
                 `)
             }
