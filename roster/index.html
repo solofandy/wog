@@ -46,7 +46,7 @@
 
         #main-content {
             padding-top: 20px;
-            padding-bottom: 50px;
+            padding-bottom: 30px;
             margin: 10px auto;
             width: 1800px!important;
             background-color: #144f4f;
@@ -68,14 +68,13 @@
 
         #guild-score th,
         #guild-score td {
-            width: 250px;
-            text-align: right;
-            padding: 4px 0;
+            width: 300px;
+            text-align: center;
+            padding: 3px 0;
         }
 
         #guild-score .index {
             width: 100px;
-            text-align: center;
         }
 
         #guild-score .name {
@@ -217,10 +216,22 @@
                 return
             }
 
+            const Cell = (guy, day) => {
+                const d = guy.WarResults[day]
+                let c = ''
+                if (d.S) {
+                    c = `${d.S < 1000 ? '0' : ''}${d.S}  ・  `
+                }
+                if (d.S || d.W || d.L) {
+                    c = c + `${d.W} / ${d.L}`
+                }
+                return c
+            }
+
             const at = new Date()
             at.setTime(roster.at)
 
-            $(`#guild-title`).text(`${roster.name} / ${at.toLocaleString()}` )
+            $(`#guild-title`).text(`${roster.name}  ・  ${at.toLocaleString()}` )
 
             let i = 1
             const scores = roster.scores.sort((x, y) => y.ScoreCurrent - x.ScoreCurrent)
@@ -231,10 +242,10 @@
                         <td class="index">${i++}</td>
                         <td class="name">${guy.Name}</td>
                         <td>${guy.ScoreCurrent}</td>
-                        <td>${guy.WarResults[0].S || ''}  ${guy.WarResults[0].W}/${guy.WarResults[0].L}</td>
-                        <td>${guy.WarResults[1].S || ''}  ${guy.WarResults[1].W}/${guy.WarResults[1].L}</td>
-                        <td>${guy.WarResults[2].S || ''}  ${guy.WarResults[2].W}/${guy.WarResults[2].L}</td>
-                        <td>${guy.WarResults[3].S || ''}  ${guy.WarResults[3].W}/${guy.WarResults[3].L}</td>
+                        <td>${Cell(guy, 0)}</td>
+                        <td>${Cell(guy, 1)}</td>
+                        <td>${Cell(guy, 2)}</td>
+                        <td>${Cell(guy, 3)}</td>
                     </tr>
                 `)
             }
@@ -243,15 +254,16 @@
                 Name: "TOTAL",
                 ScoreCurrent: 0,
                 WarResults: [
-                    { W: 0, L: 0 },
-                    { W: 0, L: 0 },
-                    { W: 0, L: 0 },
-                    { W: 0, L: 0 }
+                    { S: 0, W: 0, L: 0 },
+                    { S: 0, W: 0, L: 0 },
+                    { S: 0, W: 0, L: 0 },
+                    { S: 0, W: 0, L: 0 }
                 ]
             }
             for (const guy of scores) {
                 total.ScoreCurrent += guy.ScoreCurrent
                 for (let d = 0; d < 4; d++) {
+                    total.WarResults[d].S += guy.WarResults[d].S || 0 
                     total.WarResults[d].W += guy.WarResults[d].W 
                     total.WarResults[d].L += guy.WarResults[d].L
                 }
@@ -272,10 +284,10 @@
                     <td class="index">TOTAL</td>
                     <td class="name">&nbsp;</td>
                     <td>${total.ScoreCurrent}</td>
-                    <td>${total.WarResults[0].W} / ${total.WarResults[0].L}</td>
-                    <td>${total.WarResults[1].W} / ${total.WarResults[1].L}</td>
-                    <td>${total.WarResults[2].W} / ${total.WarResults[2].L}</td>
-                    <td>${total.WarResults[3].W} / ${total.WarResults[3].L}</td>
+                    <td>${Cell(total, 0)}</td>
+                    <td>${Cell(total, 1)}</td>
+                    <td>${Cell(total, 2)}</td>
+                    <td>${Cell(total, 3)}</td>
                 </tr>
             `)
 
@@ -283,11 +295,10 @@
             $.notify(`${roster.name}`, {className: 'success',  position: "top-left" })
         }
 
-        const Go = (id) => {
-            const roster = LoadGuildRoster(id)
-            if (roster) {
-                Render(roster)
-            }
+        const Go = () => {
+            const id = $(`#select-guild`).val()
+            const roster = LoadGuildRoster(id || '')
+            Render(roster)
         }
 
         $(`#button-guild-add`).click(() => {
@@ -310,7 +321,7 @@
             if (guilds.length > 0) {
                 const id = guilds[0].id
                 $(`#select-guild`).val(id)
-                Go(id)
+                Go()
             }
             $.notify(`移除 ${name}`, {className: 'success',  position: "top-left" })
         })
@@ -331,14 +342,19 @@
                     return
                 }
 
-                const guys = await $wog.GetGuildRoster(id, 5377)
-                if (!guys || !(length in guys)) {
-                    $.notify(`查询失败`, {className: 'error',  position: "top-left" })
+                for (const guild of guilds) {
+                    const guys = await $wog.GetGuildRoster(guild.id, 5377)
+                    if (!guys || !(length in guys)) {
+                        $.notify(`查询 ${guild.name} 失败`, {className: 'error',  position: "top-left" })
+                        break
+                    }
+                    else {
+                        $.notify(`已同步 ${guild.name}`, {className: 'success',  position: "top-left" })
+                        SaveGuildRoster(guild.id, guild.name, guys)
+                    }
                 }
-                else {
-                    const roster = SaveGuildRoster(id, name, guys)
-                    Render(roster)
-                }
+                
+                Go()
             }
             finally {
                 $(`#button-guild-sync`).text('同步数据')
@@ -346,10 +362,7 @@
             }
         })
 
-        $(`#select-guild`).change(() => {
-            const id = $(`#select-guild`).val()
-            Go(id)
-        })
+        $(`#select-guild`).change(Go)
 
         LoadGuilds()
         BuildGuildList()
@@ -357,7 +370,7 @@
         if (guilds.length > 0) {
             const id = guilds[0].id
             $(`#select-guild`).val(id)
-            Go(id)
+            Go()
         }
 
     </script>
