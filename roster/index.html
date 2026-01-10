@@ -185,9 +185,10 @@
             else {
                 $.notify(`已加载 ${$wog.player.usercode} @ ${conf.eventid}`, {className: 'success',  position: "top-left" })
             }
-            guilds = $wog.$get(`ROSTER_GUILDS`) || []
+            
+            guilds = $wog.$get(`ROSTER_GUILDS`) || [ ]
 
-            rosters = $wog.$get(`ROSTERS`)
+            rosters = $wog.$get(`ROSTERS`) || { }
         }
 
         const SaveGuilds = () => {
