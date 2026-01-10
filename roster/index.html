@@ -186,6 +186,18 @@
         }
 
         const SaveGuildRoster = (id, name, scores) => {
+            const exists = LoadGuildRoster(id)
+            const getDayScore = (name, day) => {
+                if (!exists) {
+                    return 0
+                }
+                const g = exists.scores.find(g => g.Name == name)
+                if (!g || !g.WarResults) {
+                    return 0
+                }
+                return g.WarResults[day].S || 0
+            }
+
             const roster = {
                 id, 
                 name,
@@ -198,7 +210,8 @@
             }
             for (const guy of roster.scores) {
                 let s = guy.ScoreCurrent
-                for (let d = 0; d < roster.day - 1; d++) {
+                for (let d = 0; d <= roster.day - 1; d++) {
+                    guy.WarResults[d].S = getDayScore(guy.Name, d)
                     s = s - (guy.WarResults[d].S || 0)
                 }
                 guy.WarResults[roster.day].S = s
@@ -253,7 +266,6 @@
                     return y.ScoreCurrent - x.ScoreCurrent
                 }
             })
-            console.log(orderby, scores)
             $(`#guild-score tbody tr`).remove()
             for (const guy of scores) {
                 $(`#guild-score tbody`).append(`
