@@ -176,7 +176,8 @@
         }
 
         const LoadGuildRoster = (id) => {
-            return $wog.$get(`ROSTER_${id}`)
+            const roster = $wog.$get(`ROSTER_${id}`)
+            return roster.eventid && roster.eventid != conf.eventid ? null : roster
         }
 
         const GetGWDay = () => {
@@ -202,6 +203,7 @@
                 id, 
                 name,
                 scores,
+                eventid: conf.eventid,
                 at: new Date().getTime(),
                 day: GetGWDay()
             }
