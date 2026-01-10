@@ -350,6 +350,17 @@
                     <td>${Cell(total, 3)}</td>
                 </tr>
             `)
+            $(`#guild-score tbody`).append(`
+                <tr>
+                    <td class="index"></td>
+                    <td class="name"></td>
+                    <td></td>
+                    <td>${TICK(roster.ticks[0] || 0)}</td>
+                    <td>${TICK(roster.ticks[1] || 0)}</td>
+                    <td>${TICK(roster.ticks[2] || 0)}</td>
+                    <td>${TICK(roster.ticks[3] || 0)}</td>
+                </tr>
+            `)
 
             window.$roster = roster
             $.notify(`${roster.name}`, {className: 'success',  position: "top-left" })
