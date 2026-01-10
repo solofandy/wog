@@ -31,7 +31,7 @@
         }
 
         #guild-select {
-            width: 200px;
+            width: 300px;
             margin: auto;
             text-align: center;
             font-size: 16px;
@@ -149,16 +149,24 @@
         </table>
     </div>
 
-    <div style="display: flex; float: right;">
-        <div class="tool-line" style="padding: 20px 50px;">
-            <button id="button-export-json" type="button" class="float-end btn btn-sm btn-primary">导出 JSON</button>
-            <button id="button-export-csv" type="button" class="float-end btn btn-sm btn-primary" style="margin: 0 10px;">导出 CSV </button>
+    <div style="display: flex; float: left;">
+        <div class="tool-line" style="padding: 10px 0 10px 50px;">
+            <input id="input-import" class="form-control form-control-sm" type="text" placeholder="JSON">
+        </div>
+        <div class="tool-line" style="padding: 10px;">
+            <button id="button-import" type="button" class="float-end btn btn-sm btn-warning" style="margin: 0 10px;">导入 JSON</button>
+        </div>
+        <div class="tool-line" style="padding: 10px;">
+            <button id="button-export-json" type="button" class="float-end btn btn-sm btn-primary" style="margin: 0 10px;">导出 JSON</button>
+        </div>
+        <div class="tool-line" style="padding: 10px;">
+            <button id="button-export-csv" type="button" class="float-end btn btn-sm btn-primary">导出 CSV </button>
         </div>
     </div>
 
     <script>
+
         let GWDAY = `2026/01/08`
-        let guilds = [ ]
         let conf = { }
         let rosters = { }
         let orderby = ''
@@ -170,12 +178,13 @@
             return Math.min(day, 3)
         }
 
-        const GetGuildName = (id) => {
-            const guild = guilds.find(g => g.id == id)
-            return !guild ? `` : guild.name
+        const TICK = (tick) => {
+            const at = new Date()
+            at.setTime(tick)
+            return at.toLocaleString()
         }
 
-        const LoadGuilds = () => {
+        const LoadRosters = () => {
             $wog.loadPlayer()
             conf = $wog.$get(`KEEP_CONFIG`) || {}
             
@@ -183,20 +192,18 @@
                 $.notify(`加载玩家信息失败`, {className: 'error',  position: "top-left" })
             }
             else {
-                $.notify(`已加载 ${$wog.player.usercode} @ ${conf.eventid}`, {className: 'success',  position: "top-left" })
+                $.notify(`已加载 ${$wog.player.usercode} @ ${conf.eventid}`, {className: 'success',  position: "top" })
             }
-            
-            guilds = $wog.$get(`ROSTER_GUILDS`) || [ ]
 
             rosters = $wog.$get(`ROSTERS`) || { }
         }
 
-        const SaveGuilds = () => {
-            $wog.$set(`ROSTER_GUILDS`, guilds)
+        const SaveRosters = () => {
+            $wog.$set(`ROSTERS`, rosters)
         }
 
         const LoadGuildRoster = (id) => {
-            const roster = (id in rosters) ? rosters[id] : $wog.$get(`ROSTER_${id}`)
+            const roster = (id in rosters) ? rosters[id] : { }
             return (roster.eventid === conf.eventid) ? roster : { }
         }
 
@@ -239,17 +246,18 @@
             }
 
             rosters[id] = roster
-            $wog.$set(`ROSTERS`, rosters)
-            //$wog.$set(`ROSTER_${id}`, roster)
+
+            SaveRosters()
+
             return roster
         }
 
         const BuildGuildList = () => {
             $(`#select-guild option`).remove()
-            for (const guild of guilds) {
+            for (const id in rosters) {
                 $(`#select-guild`).append($('<option>', {
-                    value: guild.id,
-                    text: guild.name
+                    value: id,
+                    text: rosters[id].name
                 }));
             }
         }
@@ -271,10 +279,7 @@
                 return c
             }
 
-            const at = new Date()
-            at.setTime(roster.at)
-
-            $(`#guild-title`).text(`${roster.name}  ・  ${at.toLocaleString()}` )
+            $(`#guild-title`).text(`${roster.name}  ・  ${TICK(roster.at)}` )
 
             let i = 1
             const scores = roster.scores.sort((x, y) => {
@@ -351,32 +356,42 @@
         }
 
         const Go = () => {
-            const id = $(`#select-guild`).val()
-            const roster = LoadGuildRoster(id || '')
-            Render(roster)
+            let gid = $(`#select-guild`).val()
+            if (!gid) {
+                for (const id in rosters) {
+                    $(`#select-guild`).val(id)
+                    gid = id
+                    break
+                }
+            }
+            if (gid) {
+                const roster = LoadGuildRoster(gid)
+                Render(roster)
+            }
         }
 
         $(`#button-guild-add`).click(() => {
             const id = $(`#input-guild-id`).val()
             const name = $(`#input-guild-name`).val()
-            const exists = guilds.find(guild => guild.id == id)
-            if (!exists) {
+            if (id in rosters) {
+                rosters.name = name
+            }
+            else {
                 guilds.push({ id, name })
-                SaveGuilds()
                 BuildGuildList()
             }
         })
 
         $(`#button-guild-remove`).click(() => {
             const id = $(`#select-guild`).val()
-            const name = GetGuildName(id)
-            guilds = guilds.filter(g => g.id != id)
-            SaveGuilds()
-            BuildGuildList()
-            if (guilds.length > 0) {
-                const id = guilds[0].id
-                $(`#select-guild`).val(id)
-                Go()
+            if (id in rosters) {
+                
+                delete rosters[id]
+
+                SaveRosters()
+
+                BuildGuildList()
+
             }
             $.notify(`移除 ${name}`, {className: 'success',  position: "top-left" })
         })
@@ -391,13 +406,8 @@
             syncing = true
             $(`#button-guild-sync`).text('正在同步')
             try {
-                const id = $(`#select-guild`).val()
-                const name = GetGuildName(id)
-                if (!name) {
-                    return
-                }
-
-                for (const guild of guilds) {
+                for (const id in rosters) {
+                    const guild = rosters[id]
                     const guys = await $wog.GetGuildRoster(guild.id, 5377)
                     if (!guys || !(length in guys)) {
                         $.notify(`查询 ${guild.name} 失败`, {className: 'error',  position: "top-left" })
@@ -429,15 +439,49 @@
             saveAs(blob, `WOG-Rosters-${GWDAY.replace(/\//g, '-')}.json`)
         })
 
-        LoadGuilds()
+        $(`#button-export-csv`).click(() => {
+            let s = ``
+            for (const id in rosters) {
+                const guild = rosters[id]
+                if (!guild.at) {
+                    continue
+                }
+                let i = 1
+                s += `${guild.name}, ${GWDAY}, ${TICK(guild.at)} ,,\r\n`
+                s += `#, name, Last, Current, DAY 1, Win, Lose, DAY 2, Win, Lose, DAY 3, Win, Lose, DAY 4, Win, Lose, ,,\r\n`
+                for (const guy of guild.scores) {
+                    s += `${i++}, ${guy.Name.replace(/,/g, '')}, ${guy.ScoreLast}, ${guy.ScoreCurrent}, `
+                    for (let d = 0; d < 4; d++) {
+                        s += `${guy.WarResults[d].S || 0}, ${guy.WarResults[d].W}, ${guy.WarResults[d].L}, `
+                    }
+                    s += `,\r\n`
+                }
+                s += `,,\r\n`
+                s += `,,\r\n`
+            }
+            const blob = new Blob([s], {type: "text/plain;charset=utf-8"})
+            saveAs(blob, `WOG-Rosters-${GWDAY.replace(/\//g, '-')}.csv`)
+
+        })
+
+        $(`#button-import`).click(() => {
+            const content = $(`#input-import`).val()
+            try {
+                rosters = JSON.parse(content)
+                SaveRosters()
+                $.notify(`导入成功`, {className: 'success',  position: "top" })
+                Go()
+            }
+            catch {
+                $.notify(`导入失败`, {className: 'error',  position: "top" })
+            }
+        })
+
+        LoadRosters()
 
         BuildGuildList()
 
-        if (guilds.length > 0) {
-            const id = guilds[0].id
-            $(`#select-guild`).val(id)
-            Go()
-        }
+        Go()
 
     </script>
 
