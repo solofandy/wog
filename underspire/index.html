@@ -334,7 +334,7 @@
           <div class="form-check form-check-inline">
 
           </div>
-          <div class="form-check form-check-inline">
+          <div class="form-check form-check-inline form-switch">
             <input class="form-check-input switch-tip" type="checkbox" id="icb-completed" value="option2">
             <label class="form-check-label label-tip label-completed" for="icb-completed">已完成</label>
           </div>
@@ -514,11 +514,24 @@
                     return false;
                 }
                 const t = treasures[num].TypeId;
-                if (t == 3 || t == 5) {
+                if (t == 5) {
                     return true;
                 }
                 else {
-                    console.log(`(${row + 1}, ${col + 1}): TYPE=${t}`);
+                    return false;
+                }
+            }
+
+            const isTorch = (row, col) => {
+                const num = row * 100 + col;
+                if (!(num in treasures)) {
+                    return false;
+                }
+                const t = treasures[num].TypeId;
+                if (t == 3) {
+                    return true;
+                }
+                else {
                     return false;
                 }
             }
@@ -669,6 +682,10 @@
                     }
                     else if (isTreasure(row, col) && hasSwitch("treasures")) {
                         $(`#${getCellDomId(row, col)}`).addClass('guardian-90');
+                    }
+                    else if (isTorch(row, col) && hasSwitch("treasures")) {
+                        $(`#${getCellDomId(row, col)}`).addClass('guardian-90');
+                        $(`#${getCellDomId(row, col)} .cell-core`).text(`T`);
                     }
                     else if (isPotral(row, col, value)) {
                         $(`#${getCellDomId(row, col)} .cell-core`).text(`<>`);
