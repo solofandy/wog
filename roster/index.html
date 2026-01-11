@@ -409,7 +409,7 @@
                 rosters.name = name
             }
             else {
-                guilds.push({ id, name })
+                rosters[id] = { id, name }
                 BuildGuildList()
             }
         })
