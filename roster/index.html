@@ -19,7 +19,8 @@
             background-color: #001818;
         }
 
-        #header-content {
+        #header-content,
+        #footer-content {
             margin: 0 auto;
             width: 1800px;
         }
@@ -110,7 +111,7 @@
     <div id="header">
         <div id="header-content">
             <div style="display: flex; float: left;">
-                <div class="tool-line" style="padding: 10px;">
+                <div class="tool-line" style="padding: 10px 0;">
                     <input id="input-gwday" class="form-control form-control-sm" type="text" placeholder="会战日期">
                 </div>
                 <div class="tool-line" style="padding: 10px;">
@@ -158,18 +159,21 @@
         </table>
     </div>
 
-    <div style="display: flex; float: left;">
-        <div class="tool-line" style="padding: 10px 0 10px 50px;">
-            <input id="input-import" class="form-control form-control-sm" type="text" placeholder="JSON">
-        </div>
-        <div class="tool-line" style="padding: 10px;">
-            <button id="button-import" type="button" class="float-end btn btn-sm btn-warning" style="margin: 0 10px;">导入 JSON</button>
-        </div>
-        <div class="tool-line" style="padding: 10px;">
-            <button id="button-export-json" type="button" class="float-end btn btn-sm btn-primary" style="margin: 0 10px;">导出 JSON</button>
-        </div>
-        <div class="tool-line" style="padding: 10px;">
-            <button id="button-export-csv" type="button" class="float-end btn btn-sm btn-primary">导出 CSV </button>
+    
+    <div id="footer-content">
+        <div style="display: flex; float: left;">
+            <div class="tool-line" style="padding: 10px 0 10px 0;">
+                <input id="input-import" class="form-control form-control-sm" type="text" placeholder="JSON">
+            </div>
+            <div class="tool-line" style="padding: 10px;">
+                <button id="button-import" type="button" class="float-end btn btn-sm btn-warning" style="margin: 0 10px;">导入 JSON</button>
+            </div>
+            <div class="tool-line" style="padding: 10px;">
+                <button id="button-export-json" type="button" class="float-end btn btn-sm btn-primary" style="margin: 0 10px;">导出 JSON</button>
+            </div>
+            <div class="tool-line" style="padding: 10px;">
+                <button id="button-export-csv" type="button" class="float-end btn btn-sm btn-primary">导出 CSV </button>
+            </div>
         </div>
     </div>
 
