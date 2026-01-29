@@ -448,7 +448,7 @@
 
                 for (const id in rosters) {
                     const guild = rosters[id]
-                    const guys = await $wog.GetGuildRoster(guild.id, 5377)
+                    const guys = await $wog.GetGuildRoster(guild.id, $wog.$get("KEEP_CONFIG").eventid || 5378)
                     if (!guys || !(length in guys)) {
                         $.notify(`查询 ${guild.name} 失败`, {className: 'error',  position: "top-left" })
                         break
