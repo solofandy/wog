@@ -127,12 +127,12 @@
 
         .dark-mode .label-guardian,
         .dark-mode .cell.guardian .cell-core {
-            background-color: #28ac2f !important;
+            background-color: #0d6efd !important;
         }
         
         .dark-mode .label-guardian-90,
         .dark-mode .cell.guardian-90 .cell-core {
-            background-color: #7cb91b;
+            background-color: #28ac2f;
         }
 
         .dark-mode .label-trap-90,
@@ -246,12 +246,12 @@
 
         .label-guardian,
         .cell.guardian .cell-core {
-            background-color: #00f80c !important;
+            background-color: #0d6efd !important;
         }
         
         .label-guardian-90,
         .cell.guardian-90 .cell-core {
-            background-color: #d3d700;
+            background-color: #28ac2f;
         }
 
         .label-trap-90,
@@ -536,6 +536,20 @@
                 }
             }
 
+            const isFreeTreasure = (row, col) => {
+                const num = row * 100 + col;
+                if (!(num in treasures)) {
+                    return false;
+                }
+                const t = treasures[num].TypeId;
+                if (t == 2 || t == 4) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+
             const isTrap =  (row, col, value) => {
                 return getCellType(value) == CELL_TYPE_90_TRAP
             }
@@ -619,7 +633,7 @@
                         <div class="cell-path up"></div>
                         <div></div>
                         <div class="cell-path left"></div>
-                        <div class="cell-core">${is(value, CELL_TYPE_ENTRANCE) ? 'E' : ''}</div>
+                        <div class="cell-core">${is(value, CELL_TYPE_ENTRANCE) ? '入' : ''}</div>
                         <div class="cell-path right"></div>
                         <div></div>
                         <div class="cell-path down"></div>
@@ -662,12 +676,12 @@
                     const value = UnderspireData.Map[row][col];
                     if (is(value, CELL_TYPE_SHOP)) {
                         $(`#${getCellDomId(row, col)}`).addClass('shop');
-                        $(`#${getCellDomId(row, col)} .cell-core`).text('S');
+                        $(`#${getCellDomId(row, col)} .cell-core`).text('商');
                     }
                     else if (is(value, CELL_TYPE_DRAGON) || is(value, CELL_TYPE_FINAL)) {
                         bosses.push({ row, col });
                         $(`#${getCellDomId(row, col)}`).addClass('boss');
-                        $(`#${getCellDomId(row, col)} .cell-core`).text('B');
+                        $(`#${getCellDomId(row, col)} .cell-core`).text('龙');
                     }
                     else if (isGuardian(value) && hasSwitch("guardian")) {
                         $(`#${getCellDomId(row, col)}`).addClass('guardian').addClass("fuzzy");
@@ -685,7 +699,11 @@
                     }
                     else if (isTorch(row, col) && hasSwitch("treasures")) {
                         $(`#${getCellDomId(row, col)}`).addClass('guardian-90');
-                        $(`#${getCellDomId(row, col)} .cell-core`).text(`T`);
+                        $(`#${getCellDomId(row, col)} .cell-core`).text(`🔥`);
+                    }
+                    else if (isFreeTreasure(row, col)) {
+                        $(`#${getCellDomId(row, col)}`).addClass('guardian-90');
+                        $(`#${getCellDomId(row, col)} .cell-core`).text(`送`);
                     }
                     else if (isPotral(row, col, value)) {
                         $(`#${getCellDomId(row, col)} .cell-core`).text(`<>`);
@@ -843,7 +861,9 @@
             bosses.forEach(boss => {
                 let { row, col } = boss
                 while (isUnseen(row, col) && row >= 0) {
-                    main$ ++
+                    if (!isFreeTreasure(row, col)) {
+                        main$ ++
+                    }
                     const num = getCellNum(row, col)
                     const pnt = parents[num]
                     detected[num] = true
@@ -855,7 +875,9 @@
             guardians.forEach(guardian => {
                 let { row, col } = guardian
                 while (isUnseen(row, col) && row >= 0) {
-                    guardian$ ++
+                    if (!isFreeTreasure(row, col)) {
+                        guardian$ ++
+                    }
                     const num = getCellNum(row, col)
                     const pnt = parents[num]
                     detected[num] = true
@@ -872,7 +894,9 @@
                         continue
                     }
                     while (isUnseen(row, col) && row >= 0) {
-                        treasure$ ++
+                        if (!isFreeTreasure(row, col)) {
+                            treasure$ ++
+                        }
                         const num = getCellNum(row, col)
                         const pnt = parents[num]
                         detected[num] = true
