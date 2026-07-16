@@ -1,6 +1,6 @@
 class Wogapi {
     config = {
-        version: "9.2.0r82356",
+        version: "9.3.0r83393",
     }
 
     player = {
