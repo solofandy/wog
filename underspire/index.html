@@ -64,7 +64,7 @@
             min-height: 1040px;
         }
 
-        #underspire-info {
+        #underspire-footer {
             margin: auto;
             margin-top: 20px;
             margin-bottom: 20px;
@@ -75,7 +75,11 @@
             font-family: 'Courier New', Courier, monospace;
         }
 
-        #underspire-info .line {
+        #underspire-footer .rewards {
+            text-align: left;
+        }
+
+        #underspire-footer .line {
             padding-top: 3px;
         }
 
@@ -145,7 +149,7 @@
             background-color: #222222;
         }
 
-        .dark-mode #underspire-info {
+        .dark-mode #underspire-footer {
             color: #aaa;
         }
 
@@ -341,7 +345,18 @@
     </div>
 
     <table id="underspire-map" class="shadow "> </table>
-    <div id="underspire-info"></div>
+    <table id="underspire-footer">
+        <td class="rewards">
+            <div class="line"> 1 石榴龙  ： 弱效荣耀晶球、30王国经验</div>
+            <div class="line"> 2 翡翠龙  ： SS钥匙、150王国经验</div>
+            <div class="line"> 3 蓝宝石龙： 小黄球、3蓝钥匙</div>
+            <div class="line"> 4 紫水晶龙： 荣耀晶球、SS钥匙</div>
+            <div class="line"> 5 黄玉龙  ： 小蓝球、10诅咒符文</div>
+            <div class="line"> 6 红宝石龙： 混乱晶球、大金球</div>
+            <div class="line"> F 钻石龙  ： 50龙石、小爪牙球</div>
+        </td>
+        <td id="underspire-info"></td>
+    </table>
     <div id="underspire-tool">
         <!-- <button id="button-clear" class="btn btn-sm btn-primary">清除标记</button>  -->
     </div>
