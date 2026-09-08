@@ -555,6 +555,7 @@
             }
             finally {
                 syncing = false
+                $.notify("同步完成", "info");
                 $(`#button-sync`).text('同步数据')
             }
         }
