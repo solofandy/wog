@@ -320,7 +320,12 @@
 
         function purify_guild(keep) {
 
-            const get_name = () => `GuildData` in keep ? keep.GuildData.Name : WE;
+            if (!keep) {
+                return {
+                };
+            }
+
+            const get_name = () => (`GuildData` in keep) ? keep.GuildData.Name : WE;
 
             const generate_key = (r, l) => `Rank${r}Loc${l}`;
 
@@ -438,7 +443,7 @@
             }
 
             const keep = keeps[d]
-            if (!keep) {
+            if (!keep || !keep.GuildData) {
                 return
             }
 

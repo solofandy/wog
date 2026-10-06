@@ -1,3 +1,6 @@
+/// https://garyatrics.com/taran-data/
+/// https://garyatrics.com/gow_assets/
+
 class Wogapi {
     config = {
         version: "9.4.0r84892",
