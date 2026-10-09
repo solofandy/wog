@@ -111,9 +111,6 @@
     <div id="header">
         <div id="header-content">
             <div style="display: flex; float: left;">
-                <div class="tool-line" style="padding: 10px 0;">
-                    <input id="input-gwday" class="form-control form-control-sm" type="text" placeholder="会战日期">
-                </div>
                 <div class="tool-line" style="padding: 10px;">
                     <input id="input-guild-id" class="form-control form-control-sm" type="text" placeholder="工会ID">
                 </div>
@@ -121,12 +118,16 @@
                     <input id="input-guild-name" class="form-control form-control-sm" type="text" placeholder="工会名">
                 </div>
                 <div class="tool-line" style="padding: 10px;">
-                    <button id="button-guild-add" type="button" class="float-end btn btn-sm btn-success">添加</button>
+                    <button id="button-guild-remove" type="button" class="float-end btn btn-sm btn-danger">移除</button>
+                    <button id="button-guild-add" type="button" class="float-end btn btn-sm btn-success" style="margin-right: 10px;">添加</button>
                 </div>
             </div>
             <div style="display: flex; float: right;">
+                <div class="tool-line" style="padding: 10px 0;">
+                    <input id="input-gwday" class="form-control form-control-sm" type="text" placeholder="会战日期">
+                </div>
                 <div class="tool-line" style="padding: 10px;">
-                    <button id="button-guild-remove" type="button" class="float-end btn btn-sm btn-danger">移除工会</button>
+                    <button id="button-guild-auto-sync" type="button" class="float-end btn btn-sm btn-primary">自动同步</button>
                     <button id="button-guild-sync" type="button" class="float-end btn btn-sm btn-warning" style="margin-right: 10px">同步数据</button>
                 </div>
             </div>
@@ -436,7 +437,7 @@
         
         let syncing = false;
 
-        $(`#button-guild-sync`).click(async () => {
+        const sync_roster = async () => {
             if (syncing) {
                 return
             }
@@ -465,7 +466,50 @@
                 $(`#button-guild-sync`).text('同步数据')
                 syncing = false
             }
-        })
+        }
+
+        let sync_looping = null
+
+        let sync_next = 0
+
+        const ctrl_loop = () => {
+            if (!sync_looping) {
+                sync_looping = setInterval(async () => {
+                    let now = new Date()
+                    if (now.getTime() >= sync_next) {
+                        await sync_roster()
+                    }
+                    now = new Date()
+                    const h = now.getHours()
+                    const m = now.getMinutes()
+                    if (h == 14 && m > 50) {
+                        sync_next = now.getTime() + 2 * 60000
+                    }
+                    else if (h == 14 && m > 30) {
+                        sync_next = now.getTime() + 5 * 60000
+                    } 
+                    else {
+                        sync_next = now.getTime() + 20 * 60000
+                    }
+                    const next = new Date(sync_next)
+                    $(`#button-guild-auto-sync`)
+                        .addClass(`btn-danger`)
+                        .removeClass(`btn-primary`)
+                        .text(`${next.getHours()}:${next.getMinutes()} .. 取消`)
+                }, 3000);
+            }
+            else {
+                clearInterval(sync_looping)
+                $(`#button-guild-auto-sync`)
+                        .addClass(`btn-primary`)
+                        .removeClass(`btn-danger`)
+                        .text(`自动同步`)
+            }
+        }
+
+        $(`#button-guild-sync`).click(sync_roster)
+
+        $(`#button-guild-auto-sync`).click(ctrl_loop)
 
         $(`#guild-score .orderable`).click(e => {
             orderby = $(e.currentTarget).attr(`order`) || ``
