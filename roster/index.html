@@ -477,26 +477,28 @@
                 sync_looping = setInterval(async () => {
                     let now = new Date()
                     if (now.getTime() >= sync_next) {
+
                         await sync_roster()
+                        
+                        now = new Date()
+                        const h = now.getHours()
+                        const m = now.getMinutes()
+                        if (h == 14 && m > 50) {
+                            sync_next = now.getTime() + 2 * 60000
+                        }
+                        else if (h == 14 && m > 30) {
+                            sync_next = now.getTime() + 5 * 60000
+                        } 
+                        else {
+                            sync_next = now.getTime() + 20 * 60000
+                        }
+                        const next = new Date(sync_next)
+                        $(`#button-guild-auto-sync`)
+                            .addClass(`btn-danger`)
+                            .removeClass(`btn-primary`)
+                            .text(`${next.getHours()}:${next.getMinutes()} .. 取消`)
                     }
-                    now = new Date()
-                    const h = now.getHours()
-                    const m = now.getMinutes()
-                    if (h == 14 && m > 50) {
-                        sync_next = now.getTime() + 2 * 60000
-                    }
-                    else if (h == 14 && m > 30) {
-                        sync_next = now.getTime() + 5 * 60000
-                    } 
-                    else {
-                        sync_next = now.getTime() + 20 * 60000
-                    }
-                    const next = new Date(sync_next)
-                    $(`#button-guild-auto-sync`)
-                        .addClass(`btn-danger`)
-                        .removeClass(`btn-primary`)
-                        .text(`${next.getHours()}:${next.getMinutes()} .. 取消`)
-                }, 3000);
+                }, 10000);
             }
             else {
                 clearInterval(sync_looping)
